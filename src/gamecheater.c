@@ -26,22 +26,214 @@
 #include <config.h>
 #endif
 
+/*
 #ifndef HAVE_PTRACE
 #error "You must have \"ptrace\" systemcall!"
 #endif
+*/
 
-#include "process.h"
-#include "search.h"
 #include "gamecheater.h"
 
-enum
-{
-   MYPROC_ID_COLUMN,
-   MYPROC_COLUMN,
-   N_MYPROC_COLUMNS
-};
 
-void replace_activate(GtkTreeView* treeview, gpointer data)
+static GtkListStore* get_store_proc(GtkListStore* store_proc)
+{
+  GtkListStore* store = store_proc;
+  if (store == NULL) {
+    store = gtk_list_store_new(N_PROC_COLUMNS, G_TYPE_LONG,
+                               G_TYPE_LONG,G_TYPE_STRING);
+  } else {
+    gtk_list_store_clear(store);
+  }
+
+  GtkTreeIter iter;
+  struct stat mystat;
+  GDir* dproc;
+  const gchar* filename;
+  glong pid = 0;
+  glong uid = 0;
+
+  if (stat("/proc", &mystat) < 0) return store;
+
+  dproc = g_dir_open("/proc", 0, NULL);
+  if (dproc == NULL) return store;
+
+  while ((filename = g_dir_read_name(dproc)) != NULL) {
+    if (filename[0] == '.') continue;
+    /* can not ptrace self */
+    pid = strtol(filename, NULL, 0);
+    if (pid <= 1) continue;
+    if (pid == getpid()) continue;
+    if (strcmp(filename, "self") == 0) continue;
+    char temp[256];
+    snprintf(temp, sizeof(temp), "/proc/%s", filename);
+    if (stat(temp, &mystat) < 0) continue;
+    if (S_ISDIR(mystat.st_mode)) {
+      snprintf(temp, sizeof(temp), "/proc/%s/maps", filename);
+      if (stat(temp, &mystat) < 0) continue;
+        uid = mystat.st_uid;
+        snprintf(temp, sizeof(temp), "/proc/%s/exe", filename);
+        char buf[1024];
+        int i = readlink(temp, buf, sizeof(buf)-1);
+        if (i <= 0) continue;
+        buf[i] = '\0';
+        for (i = strlen(buf)-1; i >= 0; i--) {
+          if (buf[i] == '/') break;
+        }
+        gtk_list_store_append(store, &iter);
+        gtk_list_store_set(store, &iter, PROC_PID_COLUMN, pid,
+            PROC_UID_COLUMN, uid, PROC_NAME_COLUMN, buf+i+1, -1);
+    }
+  }
+
+  g_dir_close(dproc);
+
+  return store;
+}
+
+static void init_treeview_proc(GtkTreeView* treeview) 
+{
+  GtkCellRenderer* renderer;
+  GtkTreeViewColumn* column;
+
+  GtkTreeSelection *select = gtk_tree_view_get_selection(treeview);
+  gtk_tree_selection_set_mode (select, GTK_SELECTION_SINGLE);
+
+  GtkListStore* store = NULL; 
+  store = get_store_proc(store);
+
+  gtk_tree_view_set_model(treeview, GTK_TREE_MODEL(store)); 
+  g_object_unref(store);
+
+  renderer = gtk_cell_renderer_text_new();
+  column = gtk_tree_view_column_new_with_attributes(_("Process ID"),
+      renderer, "text", PROC_PID_COLUMN, NULL);
+  gtk_tree_view_column_set_resizable(column, TRUE);
+  gtk_tree_view_column_set_clickable(column, TRUE);
+  gtk_tree_view_column_set_sort_column_id(column, PROC_PID_COLUMN);
+  gtk_tree_view_append_column(treeview, column);
+
+  renderer = gtk_cell_renderer_text_new();
+  column = gtk_tree_view_column_new_with_attributes(_("Process Name"),
+      renderer, "text", PROC_NAME_COLUMN, NULL);
+  gtk_tree_view_column_set_resizable(column, TRUE);
+  gtk_tree_view_column_set_clickable(column, TRUE);
+  gtk_tree_view_column_set_sort_column_id(column, PROC_NAME_COLUMN);
+  gtk_tree_view_append_column(treeview, column);
+
+  gtk_tree_view_set_search_column(treeview, PROC_NAME_COLUMN);
+  gtk_tree_sortable_set_sort_column_id(GTK_TREE_SORTABLE (store),
+                                       PROC_PID_COLUMN, GTK_SORT_DESCENDING);
+
+  GtkTreeSelection* selection = gtk_tree_view_get_selection(treeview);
+  GtkTreePath* path = gtk_tree_path_new_first();
+  gtk_tree_selection_select_path(selection, path);
+
+  return;
+}
+
+static gboolean treeview_proc_button_press(GtkTreeView* treeview, 
+                                           GdkEventButton* event,
+                                           gpointer data) 
+{
+  if (!GTK_IS_MENU (data) || event == NULL) return FALSE;
+
+  GtkMenu *menu = GTK_MENU (data);
+
+  if (event->type == GDK_BUTTON_PRESS && event->button == 3) {
+    GtkTreeSelection* selection = gtk_tree_view_get_selection(treeview);
+    GtkTreePath* path = NULL;
+    gtk_tree_view_get_path_at_pos(treeview, (gint) event->x, (gint) event->y,
+        &path, NULL, NULL, NULL);
+
+    if (path == NULL) return FALSE;
+    gtk_tree_selection_select_path(selection, path);
+    gtk_tree_path_free(path);
+
+    gtk_menu_popup(menu, NULL, NULL, NULL, NULL, event->button, event->time);
+
+    return TRUE;
+  }
+
+  return FALSE;
+}
+
+static void refresh_treeview_proc(GtkWidget* widget,
+                                  gpointer data) 
+{
+  GtkListStore* store; 
+
+  store = GTK_LIST_STORE (gtk_tree_view_get_model(GTK_TREE_VIEW (widget)));
+  if (store == NULL) return;
+
+  store = get_store_proc(store);
+
+  return;
+}
+
+static void treeview_proc_row_activated(GtkTreeView *treeview,
+                                        GtkTreePath *arg1,
+                                        GtkTreeViewColumn *arg2,
+                                        gpointer data)
+{
+  glong pid;
+  GtkTreeIter iter;
+
+  GtkTreeModel* model = gtk_tree_view_get_model(treeview);
+  GtkTreeSelection* selection = gtk_tree_view_get_selection(treeview);
+
+  /*
+    get selected row. only one row can be selected.
+    if not, get the first.
+  */
+  GList* list = gtk_tree_selection_get_selected_rows(selection, NULL);
+  GtkTreePath* path = list->data;
+
+  gchar* name = NULL;
+  gtk_tree_model_get_iter(model, &iter, path);
+  gtk_tree_model_get(model, &iter, PROC_PID_COLUMN, &pid,
+      PROC_NAME_COLUMN, &name, -1);
+
+  g_list_foreach (list, (GFunc) gtk_tree_path_free, NULL);
+  g_list_free (list);
+
+  GladeXML* xml = glade_get_widget_tree(GTK_WIDGET (treeview));
+/*
+  GtkStatusbar* statusbar = GTK_STATUSBAR 
+                            (glade_xml_get_widget(xml, "statusbar"));
+*/
+  GtkWindow* window_main = GTK_WINDOW 
+                            (glade_xml_get_widget(xml, "window_main"));
+
+/*
+  gtk_statusbar_pop(statusbar, 0);
+  if (!ptrace_test(pid)) {
+    gchar err[256];
+    snprintf(err, sizeof(err), "Ptrace ERROR! pid = %lu", pid);
+    gtk_statusbar_push(statusbar, 0, err);
+    g_free(name);
+    return;
+  }
+*/
+
+  if (gc_ptrace_test((pid_t) pid) != 0) {
+    GtkWidget* dlg = gtk_message_dialog_new(window_main,
+        GTK_DIALOG_MODAL, GTK_MESSAGE_ERROR, GTK_BUTTONS_CLOSE,
+        _("PTRACE  %s  ERROR!\nPID[%ld]"), name, pid);
+    gtk_dialog_run(GTK_DIALOG (dlg));
+    gtk_widget_destroy(dlg);
+    g_free(name);
+    return;
+  }
+
+  create_search_window(window_main, (pid_t) pid, name);
+
+  g_free(name);
+
+  return;
+}
+
+static void run_replace_dialog(GtkTreeView* treeview,
+                               gpointer data)
 {
   gint i = 0;
   GladeXML* xml = glade_xml_new(GLADE_DIR "/replace.glade", NULL, NULL);
@@ -56,18 +248,10 @@ void replace_activate(GtkTreeView* treeview, gpointer data)
   gtk_window_set_icon(GTK_WINDOW (dialog), 
                       gtk_window_get_icon(parent));
 
-
   GtkWidget* radio = glade_xml_get_widget(xml, "radio_u32");
   /* default for 32-bit long */
   gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON (radio), TRUE);
   gtk_window_set_focus(GTK_WINDOW (dialog), radio);
-
-#ifdef DISABLE_TYPE_U64
-  radio = glade_xml_get_widget(xml, "radio_u64");
-  if (sizeof(long) != sizeof(guint64)) {
-    gtk_widget_set_sensitive(radio, FALSE);    
-  }
-#endif
 
 run:
   i = gtk_dialog_run (GTK_DIALOG (dialog));
@@ -82,27 +266,45 @@ run:
       GList* list = gtk_tree_selection_get_selected_rows(selection, NULL);
       GtkTreePath* path = list->data;
 
-      unsigned long pid = 0;
+      long pid = 0;
       gtk_tree_model_get_iter(model, &iter, path);
-      gtk_tree_model_get(model, &iter, MYPROC_ID_COLUMN, &pid, -1);
+      gtk_tree_model_get(model, &iter, PROC_PID_COLUMN, &pid, -1);
 
       g_list_foreach (list, (GFunc) gtk_tree_path_free, NULL);
       g_list_free (list);
 
       /* get address */
       unsigned long addr = 0;
-      guint64 addr_u64 = 0;
       const gchar* text;
+
       GtkWidget* entry_address = glade_xml_get_widget(xml, "entry_address");
       text = gtk_entry_get_text(GTK_ENTRY (entry_address));
-      if (!str2u64(text, &addr_u64)) break;
-      addr = addr_u64;
+
+      errno = 0;
+      addr = strtoul(text, NULL, 0);
+      if (errno != 0) {
+        GtkWidget* dlg = gtk_message_dialog_new(GTK_WINDOW (dialog),
+            GTK_DIALOG_MODAL, GTK_MESSAGE_ERROR, GTK_BUTTONS_CLOSE,
+            _("THE NUMBER IS ILLEGAL!\nNUMBER[%s]"), text);
+        gtk_dialog_run(GTK_DIALOG (dlg));
+        gtk_widget_destroy(dlg);
+        goto run;
+      }
 
       /* get value */
       guint64 value = 0;
       GtkWidget* entry_value = glade_xml_get_widget(xml, "entry_value");
       text = gtk_entry_get_text(GTK_ENTRY (entry_value));
-      if (!str2u64(text, &value)) break;
+      errno = 0;
+      value = strtoll(text, NULL, 0);
+      if (errno != 0) {
+        GtkWidget* dlg = gtk_message_dialog_new(GTK_WINDOW (dialog),
+            GTK_DIALOG_MODAL, GTK_MESSAGE_ERROR, GTK_BUTTONS_CLOSE,
+            _("THE NUMBER IS ILLEGAL!\nNUMBER[%s]"), text);
+        gtk_dialog_run(GTK_DIALOG (dlg));
+        gtk_widget_destroy(dlg);
+        goto run;
+      }
 
       /* get type */
       void* value_addr = (void*) &value;
@@ -137,223 +339,31 @@ run:
           break;
         }
       } while (0);
-#ifdef DEBUG
-printf("update:pid[%lu], addr[0x%08X], value[0x%08X], len[%lu]\n", 
-    pid, addr, (unsigned long) update_value, len);
-#endif
-      update_value(pid, (void*) addr, value_addr, len);
+
+      if (gc_ptrace_stop(pid) != 0) {
+        g_warning("ptrace %ld error!\n", pid);
+      }
+      if (!gc_set_memory(pid, (void*) addr, value_addr, len) != 0) {
+        g_warning("set memory addr[0x%0*lX] len[%lu] error!\n",
+            sizeof(unsigned long)*2, addr, len);
+      }
+      gc_ptrace_continue(pid);
+
     }
       break;
     default:
       break;
   }
+
   if (i == GTK_RESPONSE_APPLY) goto run;
+
   gtk_widget_destroy (dialog);
 
   return;
 }
 
-void init_proc_treeview(GtkTreeView* treeview) 
-{
-  GtkListStore* myproc_store; 
-  GtkCellRenderer* renderer;
-  GtkTreeViewColumn* column;
-
-  GtkTreeSelection *select = gtk_tree_view_get_selection(treeview);
-  gtk_tree_selection_set_mode (select, GTK_SELECTION_SINGLE);
-
-  myproc_store = gtk_list_store_new(N_MYPROC_COLUMNS, 
-                                    G_TYPE_ULONG, G_TYPE_STRING);
-
-  gtk_tree_view_set_model(treeview, GTK_TREE_MODEL(myproc_store)); 
-  g_object_unref(myproc_store);
-
-  renderer = gtk_cell_renderer_text_new();
-  column = gtk_tree_view_column_new_with_attributes(_("My process ID"),
-                                                    renderer,
-                                                    "text", MYPROC_ID_COLUMN,
-                                                    NULL);
-  gtk_tree_view_column_set_resizable(column, TRUE);
-  gtk_tree_view_column_set_clickable(column, TRUE);
-  gtk_tree_view_column_set_sort_column_id(column, MYPROC_ID_COLUMN);
-  gtk_tree_view_append_column(treeview, column);
-
-  renderer = gtk_cell_renderer_text_new();
-  column = gtk_tree_view_column_new_with_attributes(_("My process name"),
-                                                    renderer,
-                                                    "text", MYPROC_COLUMN,
-                                                    NULL);
-  gtk_tree_view_column_set_resizable(column, TRUE);
-  gtk_tree_view_column_set_clickable(column, TRUE);
-  gtk_tree_view_column_set_sort_column_id(column, MYPROC_COLUMN);
-  gtk_tree_view_append_column(treeview, column);
-
-  gtk_tree_view_set_search_column(treeview, MYPROC_COLUMN);
-  gtk_tree_sortable_set_sort_column_id(GTK_TREE_SORTABLE (myproc_store),
-                                       MYPROC_ID_COLUMN, GTK_SORT_DESCENDING);
-
-  return;
-}
-
-void refresh_proc_treeview(GtkWidget* widget, gpointer data) 
-{
-  GtkListStore* myproc_store; 
-  GtkTreeIter treeiter;
-  struct stat mystat;
-  GDir* dproc;
-  const gchar* filename;
-  guint64 pid = 0;
-  uid_t myuid = getuid();
-
-  myproc_store = GTK_LIST_STORE 
-                 (gtk_tree_view_get_model(GTK_TREE_VIEW (widget)));
-  if (myproc_store == NULL) return;
-  gtk_list_store_clear(myproc_store);
-
-  if (stat("/proc", &mystat) < 0) return;
-
-  dproc = g_dir_open("/proc", 0, NULL);
-  if (dproc == NULL) return;
-
-  while ((filename = g_dir_read_name(dproc)) != NULL) {
-    if (filename[0] == '.') continue;
-    // can not ptrace self
-    if (!str2u64(filename, &pid)) continue;
-    if (pid == getpid()) continue;
-    if (strcmp(filename, "self") == 0) continue;
-    char temp[256];
-    snprintf(temp, sizeof(temp), "/proc/%s", filename);
-    if (stat(temp, &mystat) < 0) continue;
-    // skip other user's processes
-    if (mystat.st_uid != myuid) continue;
-    if (S_ISDIR(mystat.st_mode)) {
-      snprintf(temp, sizeof(temp), "/proc/%s/status", filename);
-      if (stat(temp, &mystat) < 0) continue;
-      if (mystat.st_uid != myuid) continue;
-      else {
-        FILE* fproc = NULL;
-        char buf[1024];
-
-        fproc = fopen(temp, "rb");
-        if (fproc == NULL) continue;
-        while (fgets(buf, sizeof(buf), fproc) != NULL) {
-          buf[strlen(buf) - 1] = '\0';
-          /* skip stopped process */
-          if (strncmp(buf, "State:\t", 7) == 0) {
-            if (buf[7] == 'T') {
-              pid = 0;
-              break;
-            }
-          }
-          if (strncmp(buf, "Pid:\t", 5) == 0) {
-            if (!str2u64(buf+5, &pid)) {
-              pid = 0;
-              break;
-            }
-          }
-          /* skip traced process */
-          if (strncmp(buf, "TracerPid:\t", 11) == 0) {
-            if (buf[11] != '0') {
-              pid = 0;
-              break;
-            }
-          }
-        }
-        fclose(fproc);
-        if (pid == 0) continue;
-
-        snprintf(temp, sizeof(temp), "/proc/%s/exe", filename);
-        int i = readlink(temp, buf, sizeof(buf)-1);
-        if (i <= 0) continue;
-        buf[i] = '\0';
-        for (i = strlen(buf)-1; i >= 0; i--) {
-          if (buf[i] == '/') break;
-        }
-        gtk_list_store_append(myproc_store, &treeiter);
-        gtk_list_store_set(myproc_store, &treeiter, MYPROC_ID_COLUMN, 
-            (unsigned long) pid, MYPROC_COLUMN, buf+i+1, -1);
-      }
-    }
-  }
-
-  g_dir_close(dproc);
-
-  return;
-}
-
-void treeview_row_activated(GtkTreeView *treeview, GtkTreePath *arg1,
-                            GtkTreeViewColumn *arg2, gpointer data)
-{
-  unsigned long pid;
-  GtkTreeIter iter;
-
-  GtkTreeModel* model = gtk_tree_view_get_model(treeview);
-  GtkTreeSelection* selection = gtk_tree_view_get_selection(treeview);
-
-  /*
-    get selected row. only one row can be selected.
-    if not, get the first.
-  */
-  GList* list = gtk_tree_selection_get_selected_rows(selection, NULL);
-  GtkTreePath* path = list->data;
-
-  gchar* tmp = NULL;
-  gtk_tree_model_get_iter(model, &iter, path);
-  gtk_tree_model_get(model, &iter, MYPROC_ID_COLUMN, &pid,
-      MYPROC_COLUMN, &tmp, -1);
-
-  g_list_foreach (list, (GFunc) gtk_tree_path_free, NULL);
-  g_list_free (list);
-
-  GladeXML* xml = glade_get_widget_tree(GTK_WIDGET (treeview));
-  GtkStatusbar* statusbar = GTK_STATUSBAR 
-                            (glade_xml_get_widget(xml, "statusbar"));
-  GtkWindow* window_main = GTK_WINDOW 
-                            (glade_xml_get_widget(xml, "window_main"));
-
-  gtk_statusbar_pop(statusbar, 0);
-  if (!ptrace_test(pid)) {
-    gchar err[256];
-    snprintf(err, sizeof(err), "Ptrace ERROR! pid = %lu", pid);
-    gtk_statusbar_push(statusbar, 0, err);
-    g_free(tmp);
-    return;
-  }
-
-  create_search_window(window_main, pid, tmp);
-  g_free(tmp);
-
-  return;
-}
-
-gboolean treeview_button_press(GtkTreeView* treeview, 
-                                      GdkEventButton* event, gpointer data) 
-{
-  if (!GTK_IS_MENU (data) || event == NULL) return FALSE;
-
-  GtkMenu *menu = GTK_MENU (data);
-
-  GtkTreeSelection* selection = gtk_tree_view_get_selection(treeview);
-  GtkTreePath* path = NULL;
-  gtk_tree_view_get_path_at_pos(treeview, (gint) event->x, (gint) event->y,
-      &path, NULL, NULL, NULL);
-  if (path == NULL) return FALSE;
-  gtk_tree_selection_select_path(selection, path);
-  gtk_tree_path_free(path);
-
-
-  if (event->type == GDK_BUTTON_PRESS && event->button == 3) {
-
-    gtk_menu_popup(menu, NULL, NULL, NULL, NULL,
-                   event->button, event->time);
-
-    return TRUE;
-  }
-
-  return FALSE;
-}
-
-void about_dialog(GtkWidget* widget, gpointer data) 
+static void about_dialog(GtkWidget* widget,
+                         gpointer data) 
 {
   gchar* authors[] = {"Alf <h980501427@hotmail.com>",
                        NULL};
@@ -362,7 +372,7 @@ void about_dialog(GtkWidget* widget, gpointer data)
 
   gtk_show_about_dialog(parent,
       "authors", authors,
-      "comments", _("A Game Cheater Program.  Just for fun.\
+      "comments", _("A Game Cheater Program.\
 \nIt use \"ptrace\" system call to search and edit memory"),
       "copyright", "Copyright (c) 2005  h980501427@hotmail.com",
       "logo", gtk_window_get_icon(parent),
@@ -373,12 +383,10 @@ void about_dialog(GtkWidget* widget, gpointer data)
   return;
 }
 
-void gamecheater_quit(GtkWidget* widget, gpointer data) 
+static void gamecheater_quit(GtkWidget* widget,
+                             gpointer data) 
 {
-  GladeXML* xml = data;
-  GtkWidget* popmenu = glade_xml_get_widget(xml, "popmenu");
-
-  gtk_widget_destroy(popmenu);
+  /* clean objects */
 
   gtk_main_quit();
 
@@ -386,14 +394,10 @@ void gamecheater_quit(GtkWidget* widget, gpointer data)
 }
 
 
-int main(int argc, char* argv[]) 
+int main(int argc, char** argv) 
 {
 
   GladeXML* xml = NULL;
-
-  /* init threads */
-  g_thread_init(NULL);
-  gdk_threads_init();
 
   /* init gtk */
 #ifdef ENABLE_NLS
@@ -419,7 +423,7 @@ int main(int argc, char* argv[])
   g_option_context_free(context);
 
   if (show_version) {
-    printf("%s %s\n", PACKAGE, VERSION);
+    g_print("%s %s\n", PACKAGE, VERSION);
     return 0;
   }
 
@@ -435,27 +439,28 @@ int main(int argc, char* argv[])
   g_signal_connect(G_OBJECT (window_main), "destroy", 
                    G_CALLBACK (gamecheater_quit), xml);
 
-  GtkWidget* treeview_myproc = glade_xml_get_widget(xml, "treeview_myproc");
-  init_proc_treeview(GTK_TREE_VIEW (treeview_myproc));
-  refresh_proc_treeview(treeview_myproc, NULL);
+  GtkWidget* treeview_proc = glade_xml_get_widget(xml, "treeview_proc");
+  init_treeview_proc(GTK_TREE_VIEW (treeview_proc));
+
 
   GtkWidget* popmenu = glade_xml_get_widget(xml, "popmenu");
-  g_signal_connect(G_OBJECT (treeview_myproc), "row-activated",
-                   G_CALLBACK(treeview_row_activated), NULL);
-  g_signal_connect(G_OBJECT (treeview_myproc), "button_press_event", 
-                   G_CALLBACK (treeview_button_press), popmenu);
+  g_signal_connect(G_OBJECT (treeview_proc), "row-activated",
+                   G_CALLBACK(treeview_proc_row_activated), NULL);
+  g_signal_connect(G_OBJECT (treeview_proc), "button_press_event", 
+                   G_CALLBACK (treeview_proc_button_press), popmenu);
 
-  GtkWidget* item = glade_xml_get_widget(xml, "search");
+  GtkWidget* item = NULL;
+  item = glade_xml_get_widget(xml, "search");
   g_signal_connect_swapped(G_OBJECT (item), "activate",
-                   G_CALLBACK (treeview_row_activated), treeview_myproc);
+                   G_CALLBACK (treeview_proc_row_activated), treeview_proc);
 
   item = glade_xml_get_widget(xml, "update_value");
   g_signal_connect_swapped(G_OBJECT (item), "activate",
-                   G_CALLBACK (replace_activate), treeview_myproc);
+                   G_CALLBACK (run_replace_dialog), treeview_proc);
 
-  item = glade_xml_get_widget(xml, "refresh");
+  item = glade_xml_get_widget(xml, "refresh_proc");
   g_signal_connect_swapped(G_OBJECT (item), "activate",
-                   G_CALLBACK (refresh_proc_treeview), treeview_myproc);
+                   G_CALLBACK (refresh_treeview_proc), treeview_proc);
 
   GtkWidget* quit = glade_xml_get_widget(xml, "quit");
   g_signal_connect(G_OBJECT (quit), "activate",
@@ -463,16 +468,14 @@ int main(int argc, char* argv[])
 
   GtkWidget* refresh = glade_xml_get_widget(xml, "refresh");
   g_signal_connect_swapped(G_OBJECT (refresh), "activate",
-                   G_CALLBACK (refresh_proc_treeview), treeview_myproc);
+                   G_CALLBACK (refresh_treeview_proc), treeview_proc);
 
   GtkWidget* about = glade_xml_get_widget(xml, "about");
   g_signal_connect(G_OBJECT (about), "activate",
                    G_CALLBACK (about_dialog), (gpointer) window_main);
 
   /* enter the GTK main loop */
-  gdk_threads_enter();
   gtk_main();
-  gdk_threads_leave();
 
   return 0;
 }

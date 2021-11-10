@@ -1,7 +1,7 @@
-SUBDIRS = src \
+SUBDIRS = libgcheater src \
           pixmaps \
           glade \
           po
 
-EXTRA_DIST = README.zh_CN.UTF8
+#EXTRA_DIST = 
 

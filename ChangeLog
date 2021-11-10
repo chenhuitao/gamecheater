@@ -60,3 +60,20 @@
 
 # 2005-08-12  Alf <h980501427@hotmail.com>
   - v0.3 release.
+
+# 2006-04-08  Alf <h980501427@hotmail.com>
+  - Back.
+  - Rewrite the functions which call ptrace, make them to a library.
+  - Remove the thread.
+  - Use library function strtol() to get the number.
+
+# 2006-04-09  Alf <h980501427@hotmail.com>
+  - Add the library list which in /proc/<pid>/maps, user can select 
+    the search space.
+  - New icon from gnome, advanced-directory.png.
+
+# 2006-04-15  Alf <h980501427@hotmail.com>
+  - Rewrite the hex editor, use GtkTextView, add struct editor_t.
+  - Move the struct cheater_t define to search.c, remove some unused members.
+
+

@@ -30,6 +30,8 @@
 #include <gtk/gtk.h>
 #include <glade/glade.h>
 
+#include <libgcheater.h>
+
 /* Standard gettext macros. */
 #ifdef ENABLE_NLS
 #  include <libintl.h>
@@ -50,15 +52,56 @@
 #  define N_(String) (String)
 #endif
 
+enum
+{
+   PROC_PID_COLUMN,
+   PROC_UID_COLUMN,
+   PROC_NAME_COLUMN,
+   N_PROC_COLUMNS
+};
+
+enum
+{
+   MAP_CHECK_COLUMN,
+   MAP_NAME_COLUMN,
+   MAP_PROCESS_COLUMN,
+   MAP_ADDRESS_START_COLUMN,
+   MAP_ADDRESS_END_COLUMN,
+   N_MAP_COLUMNS
+};
+
+
+enum
+{
+  RESULT_ADDRESS_COLUMN,
+  RESULT_MEMORY_COLUMN,
+  N_RESULT_COLUMNS
+};
+
+typedef enum {
+  TYPE_AUTO,
+  TYPE_U8,
+  TYPE_U16,
+  TYPE_U32,
+  TYPE_U64,
+  TYPE_NUMS
+} value_type;
+
+#define MAX_RESULT_VIEW 8
+#define PREVIEW_LENGTH 0x10
+#define MEMORY_BLOCK_SIZE 0x1000
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+void create_search_window(GtkWindow* parent,
+                          pid_t pid,
+                          char* name);
 
-void about_dialog(GtkWidget* widget, gpointer user_data);
-
-void gamecheater_quit(GtkWidget* widget, gpointer user_data);
+void create_editor_window(GtkWindow* parent,
+                          pid_t pid,
+                          void* addr);
 
 #ifdef __cplusplus
 }

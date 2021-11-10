@@ -8,7 +8,7 @@ platform, please email to me. Thanks.
 
 Requirements:
   1. Linux-2.6
-  2. Glib-2.6 (with gthread).
+  2. Glib-2.6
   3. Gtk+-2.6
   4. Libglade-2.4
 
@@ -24,6 +24,6 @@ Howto use:
   7. Double-click the row which you trusted, input a new value to update 
      memory.
 
-Warnning:
+Warning:
   Modify other process' memory is dangerous, unless you know what you 
 are doing. Please save your game and works before update the memory.

@@ -1,6 +1,6 @@
 /***************************************************************************
  *
- *  Gtk+ Game Cheater
+ *  A Game Cheater Library
  *  Copyright (C) 2005 Alf <h980501427@hotmail.com>
  *
  *  This program is free software; you can redistribute it and/or modify 
@@ -19,38 +19,37 @@
  *
  **************************************************************************/
 
-#ifndef _SEARCH_H_
-#define _SEARCH_H_
+#ifndef _LIBGCHEATER_H_
+#define _LIBGCHEATER_H_
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/types.h>
 #include <unistd.h>
-
-#include <gtk/gtk.h>
-#include <glade/glade.h>
-
-enum
-{
-  ADDRESS_COLUMN,
-  MEMORY_COLUMN,
-  N_COLUMNS
-};
+#include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/ptrace.h>
+#include <sys/wait.h>
+#include <errno.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void create_search_window(GtkWindow* parent, unsigned long pid, gchar* name);
 
-void refresh_treeview(GtkTreeView* treeview, gpointer data);
+int gc_ptrace_test(pid_t pid);
 
-void addr_cell_data_func(GtkTreeViewColumn* column, GtkCellRenderer *renderer, 
-                         GtkTreeModel *model, GtkTreeIter *iter, 
-                         gpointer data);
+int gc_ptrace_stop(pid_t pid);
+
+int gc_ptrace_continue(pid_t pid);
+
+int gc_get_memory(pid_t pid, void* addr, void* buf, long buf_len);
+
+int gc_set_memory(pid_t pid, void* addr, void* buf, long buf_len);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* _SEARCH_H_ */
+#endif
+
