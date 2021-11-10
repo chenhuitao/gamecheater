@@ -1,0 +1,10 @@
+# List of source files containing translatable strings.
+
+src/editor.c
+src/gamecheater.c
+src/search.c
+glade/editor.glade 
+glade/gamecheater.glade 
+glade/input.glade 
+glade/replace.glade 
+glade/search.glade

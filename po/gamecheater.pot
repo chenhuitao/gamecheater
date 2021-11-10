@@ -1,0 +1,113 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2005-08-10 16:18+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. g_object_set(G_OBJECT (renderer), "font", "MonoSpace", NULL);
+#: src/editor.c:160 src/search.c:68
+msgid "MEMORY ADDRESS"
+msgstr ""
+
+#: src/editor.c:176
+msgid "MEMORY CONTENT"
+msgstr ""
+
+#: src/gamecheater.c:163
+msgid "My process ID"
+msgstr ""
+
+#: src/gamecheater.c:173
+msgid "My process name"
+msgstr ""
+
+#: src/gamecheater.c:356
+msgid ""
+"A Game Cheater Program.  Just for fun.\n"
+"It use \"ptrace\" system call to search and edit memory"
+msgstr ""
+
+#. g_object_set(G_OBJECT (renderer), "font", "MonoSpace", NULL);
+#: src/search.c:80
+msgid "MEMORY PREVIEW"
+msgstr ""
+
+#: glade/editor.glade:8
+msgid "Edit Memory"
+msgstr ""
+
+#: glade/gamecheater.glade:8
+msgid "Game Cheater"
+msgstr ""
+
+#: glade/gamecheater.glade:37
+msgid "_File"
+msgstr ""
+
+#: glade/gamecheater.glade:58
+msgid "_View"
+msgstr ""
+
+#: glade/gamecheater.glade:79
+msgid "_Help"
+msgstr ""
+
+#: glade/gamecheater.glade:154
+msgid "_Search"
+msgstr ""
+
+#: glade/gamecheater.glade:174
+msgid "_Update value"
+msgstr ""
+
+#: glade/input.glade:8
+msgid "Please input new value"
+msgstr ""
+
+#: glade/input.glade:76
+msgid "Please input new value : "
+msgstr ""
+
+#: glade/replace.glade:8
+msgid "Replace memory"
+msgstr ""
+
+#: glade/replace.glade:191
+msgid "ADDRESS"
+msgstr ""
+
+#: glade/replace.glade:219 glade/replace.glade:269
+msgid "If vlaue is a hexadecimal integer, add prefix \"0x\"."
+msgstr ""
+
+#: glade/replace.glade:241
+msgid "NEW VALUE"
+msgstr ""
+
+#: glade/search.glade:47
+msgid "Search Type"
+msgstr ""
+
+#: glade/search.glade:232
+msgid "Search Value"
+msgstr ""
+
+#: glade/search.glade:342
+msgid "_New value"
+msgstr ""
+
+#: glade/search.glade:368
+msgid "_Edit memory"
+msgstr ""

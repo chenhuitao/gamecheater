@@ -1,0 +1,48 @@
+# 2005-08-02  Alf <h980501427@hotmail.com>
+  - Complete the source code. Test it on some games.
+  - v0.1 release. First release.
+
+# 2005-08-05  Alf <h980501427@hotmail.com>
+  - Fix some memory leaks.
+
+# 2005-08-06  Alf <h980501427@hotmail.com>
+  - Change the statusbar of search dialog to progressbar for better UI.
+    Search "0" maybe needs a long time, because there are so many "0" in the 
+    memory, call appending GSList function takes lots of time. The program 
+    looks like have been dead. Which memory is unuseless and should be 
+    skipped?
+
+# 2005-08-07  Alf <h980501427@hotmail.com>
+  - Read the /proc/%pid%/exe symbolic link file to get the whole process 
+    executable binary filename.
+  - Set the search window's title "%pid% - name".
+  - Skip the stopped process. It would block waitpid().
+  - Skip the process which has been traced.
+  - Change ADDRESS_COLUMN, using GTYPE_UINT. Add addr_cell_data_func() to 
+    display address.
+  - Add "auto" search type as default type. Set default focus at SpinButton.
+  - Add a str2uint() function, instead of atoi(), strtoul(). Not support 
+    octal. If the str_value is too big and is out of the uint range, only get 
+    the low-digit value, ignore high-digit. If you select search type uint8 
+    and input seach value - 0x101, because of 0x101 is out of the uint8 range, 
+    the true search value is 0x01. If you are not sure which type is fit in 
+    with the search value, select auto type. 
+  - Fix a bug at search_value(). The addr memory offset is double increased 
+    when appending the result GSList.
+
+# 2005-08-09  Alf <h980501427@hotmail.com>
+  - Add arguments check in some functions.
+  - Change get_mem_preview(). Arguments len is confused, it is text length, 
+    not memory length. Now it is the memory length. Disply text convert work 
+    move to the refresh function.
+  - Add command-line parser, only show version.
+  - Change struct cheater_t. Remove u8, u16, u32, u64 because of this 
+    program is highly OS and architecture specific, instead of guint value.
+    This program now is only tested under my i386 GNU/Linux. If you have any 
+    suggestion or problem under other platform, PLZ email to me. Thanks.
+
+# 2005-08-10  Alf <h980501427@hotmail.com>
+  - Change update_value(). Now it can update memory by value length.
+  - Change search_value(). First get a block memory, then compare the content 
+    by the type. 
+  - v0.2 release.
