@@ -41,7 +41,7 @@ enum
 extern "C" {
 #endif
 
-void create_search_window(GtkWindow* parent, guint pid, gchar* name);
+void create_search_window(GtkWindow* parent, unsigned long pid, gchar* name);
 
 void refresh_treeview(GtkTreeView* treeview, gpointer data);
 

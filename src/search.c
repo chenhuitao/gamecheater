@@ -30,20 +30,19 @@
 #include "process.h"
 #include "editor.h"
 
+#ifndef G_MAXUINT8
+#define G_MAXUINT8 0xFF
+#endif
+
 void addr_cell_data_func(GtkTreeViewColumn* column, GtkCellRenderer *renderer, 
                          GtkTreeModel *model, GtkTreeIter *iter, 
                          gpointer data)
 {
-  guint addr = 0;
+  unsigned long addr = 0;
   char text[32];
 
   gtk_tree_model_get(model, iter, ADDRESS_COLUMN, &addr, -1);
-  if (sizeof(unsigned int) == sizeof(guint64)) {
-    /* 64-bit pointer */
-    snprintf(text, sizeof(text), "0x%016X", addr);
-  } else {
-    snprintf(text, sizeof(text), "0x%08X", addr);
-  }
+  snprintf(text, sizeof(text), "0x%0*lX", sizeof(long)*2, addr);
   g_object_set(renderer, "text", text, NULL);
 
   return;
@@ -99,8 +98,8 @@ void refresh_treeview(GtkTreeView* treeview, gpointer data)
 
   if (cheater->result == NULL) return;
 
-  guint i = 0;
-  gpointer p = NULL;
+  unsigned long i = 0;
+  void* p = NULL;
   GtkTreeIter treeiter;
   unsigned char preview[PREVIEW_LENGTH];
   unsigned char buf[PREVIEW_LENGTH * 3];
@@ -111,13 +110,12 @@ void refresh_treeview(GtkTreeView* treeview, gpointer data)
 
     gtk_list_store_append(store, &treeiter);
     gtk_list_store_set(store, &treeiter, ADDRESS_COLUMN, 
-        GPOINTER_TO_UINT (p), -1);
+        (unsigned long) p, -1);
 
-    get_mem_preview(cheater->pid, GPOINTER_TO_UINT (p), 
-                    preview, sizeof(preview));
+    get_mem_preview(cheater->pid, p, preview, sizeof(preview));
 
     unsigned char t[4];
-    int j = 0;
+    unsigned long j = 0;
     for (j = 0; j < sizeof(preview); j++) {
       if (3*j >= sizeof(buf)) break;
       snprintf(t, sizeof(t), "%02X ", preview[j]);
@@ -157,7 +155,7 @@ void row_activated(gpointer data, GtkTreePath *arg1,
     case GTK_RESPONSE_OK:
     {
       GtkTreeIter iter;
-      guint addr = 0;
+      unsigned long addr = 0;
 
       GtkTreeModel* model = gtk_tree_view_get_model(treeview);
       GtkTreeSelection* selection = gtk_tree_view_get_selection(treeview);
@@ -171,12 +169,12 @@ void row_activated(gpointer data, GtkTreePath *arg1,
       g_list_foreach (list, (GFunc) gtk_tree_path_free, NULL);
       g_list_free (list);
 
-      GtkWidget* spin = glade_xml_get_widget(xml, "spinbutton");
-      guint value = 0;
-      if (!str2uint(gtk_entry_get_text(GTK_ENTRY(spin)), &value)) break;
+      GtkWidget* entry = glade_xml_get_widget(xml, "entry");
+      guint64 value = 0;
+      if (!str2u64(gtk_entry_get_text(GTK_ENTRY(entry)), &value)) break;
 
-      unsigned char* value_addr = (unsigned char*) &value;
-      guint len = sizeof(guint);
+      void* value_addr = (void*) &value;
+      guint len = sizeof(long);
       guint8 u8 = value;
       guint16 u16 = value;
       guint32 u32 = value;
@@ -184,25 +182,25 @@ void row_activated(gpointer data, GtkTreePath *arg1,
       switch (cheater->type) {
         case TYPE_U8 :
         {
-          value_addr = (unsigned char*) &u8;
+          value_addr = (void*) &u8;
           len = sizeof(guint8);
           break;
         }
         case TYPE_U16 :
         {
-          value_addr = (unsigned char*) &u16;
+          value_addr = (void*) &u16;
           len = sizeof(guint16);
           break;
         }
         case TYPE_U32 :
         {
-          value_addr = (unsigned char*) &u32;
+          value_addr = (void*) &u32;
           len = sizeof(guint32);
           break;
         }
         case TYPE_U64 :
         {
-          value_addr = (unsigned char*) &u64;
+          value_addr = (void*) &u64;
           len = sizeof(guint64);
           break;
         }
@@ -232,7 +230,7 @@ void edit_activate(GtkWidget* widget, gpointer data)
       glade_xml_get_widget(xml, "treeview"));
 
   GtkTreeIter iter;
-  guint addr = 0;
+  unsigned long addr = 0;
 
   GtkTreeModel* model = gtk_tree_view_get_model(treeview);
   GtkTreeSelection* selection = gtk_tree_view_get_selection(treeview);
@@ -246,7 +244,7 @@ void edit_activate(GtkWidget* widget, gpointer data)
   g_list_foreach (list, (GFunc) gtk_tree_path_free, NULL);
   g_list_free (list);
 
-  cheater->addr = (gpointer) addr;  
+  cheater->addr = (void*) addr;
   create_editor_window(parent, cheater);
 
   return;
@@ -278,7 +276,7 @@ gboolean treeview_popupmenu(GtkTreeView* treeview,
   return FALSE;
 }
 
-void spin_activate(GtkSpinButton* spin, gpointer data)
+void entry_activate(GtkEntry* entry, gpointer data)
 {
   if (data == NULL) return;
 
@@ -318,10 +316,9 @@ void spin_activate(GtkSpinButton* spin, gpointer data)
   } while (0);
 
   /* get value */
-//  unsigned int value = gtk_spin_button_get_value_as_int(spin);
 
-  guint value = 0;
-  if (!str2uint(gtk_entry_get_text(GTK_ENTRY(spin)), &value)) return;
+  guint64 value = 0;
+  if (!str2u64(gtk_entry_get_text(entry), &value)) return;
   /*
     If the value is too big and is out of the uint range, only get the 
     low-digit value, ignore high-digit. If you select search type uint8  
@@ -333,11 +330,11 @@ void spin_activate(GtkSpinButton* spin, gpointer data)
 
   if (cheater->type == TYPE_AUTO) {
     do {
-      if (value >= 0 && value <= 0xFF) {
+      if (value >= 0 && value <= G_MAXUINT8) {
         cheater->type = TYPE_U8;
         break;
       }
-      if (value > 0xFF && value <= G_MAXUINT16) {
+      if (value > G_MAXUINT8 && value <= G_MAXUINT16) {
         cheater->type = TYPE_U16;
         break;
       }
@@ -345,7 +342,7 @@ void spin_activate(GtkSpinButton* spin, gpointer data)
         cheater->type = TYPE_U32;
         break;
       }
-      if (sizeof(unsigned int) != sizeof(guint64)) break;
+//      if (sizeof(long) != sizeof(guint64)) break;
       if (value > G_MAXUINT32) {
         cheater->type = TYPE_U64;
         break;
@@ -359,7 +356,7 @@ void spin_activate(GtkSpinButton* spin, gpointer data)
   }
 
 #ifdef DEBUG
-printf("start searth thread. type[%d], value[%lu].\n", cheater->type, value);
+printf("start searth thread. type[%u], value[%llu].\n", cheater->type, value);
 #endif
 //  search_value(cheater);
   if (!g_thread_create((GThreadFunc) search_value, cheater, FALSE, NULL)) {
@@ -388,7 +385,7 @@ void search_quit(GtkWidget* widget, gpointer data)
   return;
 }
 
-void create_search_window(GtkWindow* parent, guint pid, gchar* name)
+void create_search_window(GtkWindow* parent, unsigned long pid, gchar* name)
 {
   if (!GTK_IS_WINDOW (parent) || pid == 0 || name == NULL) return;
 
@@ -411,7 +408,7 @@ void create_search_window(GtkWindow* parent, guint pid, gchar* name)
   gtk_window_set_icon(GTK_WINDOW (window), 
                       gtk_window_get_icon(parent));
 
-  gchar* title = g_strdup_printf("%u - %s", pid, name);
+  gchar* title = g_strdup_printf("%lu - %s", pid, name);
   gtk_window_set_title(GTK_WINDOW (window), title);
   g_free(title);
   g_signal_connect(G_OBJECT (window), "destroy", 
@@ -434,18 +431,11 @@ void create_search_window(GtkWindow* parent, guint pid, gchar* name)
   g_signal_connect(G_OBJECT (item), "activate",
                    G_CALLBACK (edit_activate), (gpointer) cheater);
 
-  GtkWidget* spin = glade_xml_get_widget(xml, "spin");
-  g_signal_connect(G_OBJECT (spin), "activate", 
-                   G_CALLBACK (spin_activate), (gpointer) cheater);
+  GtkWidget* entry = glade_xml_get_widget(xml, "entry");
+  g_signal_connect(G_OBJECT (entry), "activate", 
+                   G_CALLBACK (entry_activate), (gpointer) cheater);
   /* set default focus */
-  gtk_window_set_focus(GTK_WINDOW (window), spin);
-  if (sizeof(unsigned int) != sizeof(guint64)) {
-    gtk_spin_button_set_range(GTK_SPIN_BUTTON (spin), 
-        (gdouble) 0, (gdouble) G_MAXUINT32);
-  } else {
-    gtk_spin_button_set_range(GTK_SPIN_BUTTON (spin), 
-        (gdouble) 0, (gdouble) G_MAXUINT64);
-  }
+  gtk_window_set_focus(GTK_WINDOW (window), entry);
 
   GtkWidget* radio = glade_xml_get_widget(xml, "radiobutton_auto");
   gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON (radio), TRUE);
@@ -454,13 +444,13 @@ void create_search_window(GtkWindow* parent, guint pid, gchar* name)
     PTRACE_PEEKDATA return long type.
     The size is determined by the OS variant.
   */
+#ifdef DISABLE_TYPE_U64
   /* Not 64-bit platform */
-  if (sizeof(unsigned int) != sizeof(guint64)) {
+  if (sizeof(long) != sizeof(guint64)) {
     radio = glade_xml_get_widget(xml, "radiobutton_u64");
     gtk_widget_set_sensitive(radio, FALSE);    
   }
-
-//  gtk_widget_show_all(window);
+#endif
 
   return;
 }

@@ -43,8 +43,8 @@ void refresh_mem_treeview(GtkTreeView* treeview, gpointer data)
   if (store == NULL) return;
   gtk_list_store_clear(store);
 
-  guint i = 0;
-  guint addr = GPOINTER_TO_UINT (cheater->addr);
+  int i = 0;
+  unsigned long addr = (unsigned long) cheater->addr;
   GtkTreeIter treeiter;
   unsigned char preview[PREVIEW_LENGTH];
   unsigned char buf[PREVIEW_LENGTH * 3];
@@ -55,7 +55,7 @@ void refresh_mem_treeview(GtkTreeView* treeview, gpointer data)
     gtk_list_store_append(store, &treeiter);
     gtk_list_store_set(store, &treeiter, ADDRESS_COLUMN, addr, -1);
 
-    get_mem_preview(cheater->pid, addr, preview, sizeof(preview));
+    get_mem_preview(cheater->pid, (void*) addr, preview, sizeof(preview));
 
     unsigned char t[4];
     int j = 0;
@@ -89,7 +89,7 @@ void renderer_edited(GtkCellRendererText *cellrenderertext,
 
   GtkTreeIter treeiter;
   gchar* tmp = NULL;
-  guint addr = 0;
+  unsigned long addr = 0;
 
   GtkTreeModel* model = gtk_tree_view_get_model(treeview);
   GtkTreeSelection* selection = gtk_tree_view_get_selection(treeview);
@@ -149,7 +149,7 @@ void init_mem_treeview(GtkTreeView* treeview, cheater_t* cheater)
   GtkTreeSelection *select = gtk_tree_view_get_selection(treeview);
   gtk_tree_selection_set_mode (select, GTK_SELECTION_SINGLE);
 
-  store = gtk_list_store_new(N_COLUMNS, G_TYPE_UINT, G_TYPE_STRING);
+  store = gtk_list_store_new(N_COLUMNS, G_TYPE_ULONG, G_TYPE_STRING);
 
   gtk_tree_view_set_model(treeview, GTK_TREE_MODEL(store)); 
   g_object_unref(store);
@@ -187,9 +187,9 @@ void mem_view_up(GtkTreeView* treeview, gpointer data)
 {
   cheater_t* cheater = (cheater_t*) data;
 
-  guint p = GPOINTER_TO_UINT (cheater->addr);
+  unsigned long p = (unsigned long) cheater->addr;
   p -= PREVIEW_LENGTH * MAX_RESULT_VIEW;
-  cheater->addr = GUINT_TO_POINTER (p);
+  cheater->addr = (void*) p;
 
   refresh_mem_treeview(treeview, cheater);
 
@@ -200,9 +200,9 @@ void mem_view_down(GtkTreeView* treeview, gpointer data)
 {
   cheater_t* cheater = (cheater_t*) data;
 
-  guint p = GPOINTER_TO_UINT (cheater->addr);
+  unsigned long p = (unsigned long) cheater->addr;
   p += PREVIEW_LENGTH * MAX_RESULT_VIEW;
-  cheater->addr = GUINT_TO_POINTER (p);
+  cheater->addr = (void*) p;
 
   refresh_mem_treeview(treeview, cheater);
 

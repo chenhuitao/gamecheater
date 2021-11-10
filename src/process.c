@@ -29,11 +29,10 @@
 #include "process.h"
 
 
-gboolean str2uint(const char* str, guint* puint) {
-  if (str == NULL || puint == NULL) return FALSE;
+gboolean str2u64(const char* str, guint64* pu64) {
+  if (str == NULL || pu64 == NULL) return FALSE;
 
-
-  guint u = 0;
+  guint64 u64 = 0;
   int t = -1;
   int x = 10;
   int i = 0;
@@ -46,7 +45,7 @@ gboolean str2uint(const char* str, guint* puint) {
   }
   p += i;
 
-  if (p[0] == '0' && p[1] == 'x') {
+  if (p[0] == '0' && (p[1] == 'x' || p[1] == 'X')) {
     x = 0x10;
     p += 2;
   }
@@ -56,19 +55,19 @@ gboolean str2uint(const char* str, guint* puint) {
     t = -1;
     if (p[i] == '\0') break;
     if (p[i] >= '0' && p[i] <= '9') t = p[i] - 0x30;
-    else if (p[i] >= 'a' && p[i] <= 'f') t = p[i] - 0x57;
-    else if (p[i] >= 'A' && p[i] <= 'F') t = p[i] - 0x37;
+    else if (p[i] >= 'a' && p[i] <= 'f' && x == 0x10) t = p[i] - 0x57;
+    else if (p[i] >= 'A' && p[i] <= 'F' && x == 0x10) t = p[i] - 0x37;
     if (t < 0) return FALSE;
-    u = u * x + t;
+    u64 = u64 * x + t;
   }
 
-  *puint = u;
+  *pu64 = u64;
 
   return TRUE;
 }
 
-void get_mem_preview(unsigned int pid, guint addr, 
-                     unsigned char* preview, guint len)
+void get_mem_preview(unsigned long pid, void* addr, 
+                     void* preview, unsigned long len)
 {
   if (pid == 0 || addr == 0 || preview == NULL || len == 0) return; 
 
@@ -93,8 +92,7 @@ void get_mem_preview(unsigned int pid, guint addr,
 
   j = len % sizeof(long);
   if (j > 0) {
-    x = (long) ptrace(PTRACE_PEEKDATA, pid,
-        addr + i*sizeof(long), x);
+    x = ptrace(PTRACE_PEEKDATA, pid, addr + i*sizeof(long), x);
     if (errno != 0) goto out;
     memcpy(preview + i*sizeof(long), &x, j);
   }
@@ -107,7 +105,7 @@ out:
   return;
 }
 
-gboolean ptrace_test(unsigned int pid)
+gboolean ptrace_test(unsigned long pid)
 {
   if (pid == 0) return FALSE;
 
@@ -165,20 +163,21 @@ void* search_value(cheater_t* cheater)
   if (errno != 0) goto out;
 
   long x = 0;
-  guint addr = 0;
+  void* addr = NULL;
 
   if (cheater->result == NULL) {
 
     /* No results. get mem maps */
-    snprintf(buf, sizeof(buf), "/proc/%u/maps", cheater->pid);
+    snprintf(buf, sizeof(buf), "/proc/%lu/maps", cheater->pid);
     fmaps = fopen(buf, "rb");
     if (fmaps == NULL) goto out;
 
     while (fgets(buf, sizeof(buf), fmaps) != NULL) {
-      unsigned int begin, end, offset, dev_major, dev_minor, inode;
+      unsigned long begin, end, offset, inode;
+      int dev_major, dev_minor;
       char perms[5];
       char fname[1024];
-      sscanf(buf, "%8x-%8x %s %8x %2d:%2d %d %s", 
+      sscanf(buf, "%lx-%lx %s %lx %d:%d %lu %s", 
         &begin, &end, perms, &offset, &dev_major, &dev_minor, &inode, fname);
       // skip read only mem
       if (perms[1] != 'w') continue;
@@ -190,13 +189,13 @@ void* search_value(cheater_t* cheater)
       // skip system library mem. FIXME! Maybe game library?
       if (strncmp(fname, "/usr/lib/", 9) == 0) continue;
 #ifdef DEBUG
-printf("%08X-%08X %s %08X %02u:%02u %u %s\n", 
+printf("%08X-%08X %s %08X %02d:%02d %lu %s\n", 
     begin, end, perms, offset, dev_major, dev_minor, inode, fname);
 #endif
 
-      guint j = 0;
-      guint k = end - begin;
-      guint len = 0;
+      unsigned long j = 0;
+      unsigned long k = end - begin;
+      unsigned long len = 0;
       unsigned char mem[MEMORY_BLOCK_SIZE];
 
       if (!GTK_IS_WINDOW (window)) goto out;
@@ -206,18 +205,19 @@ printf("%08X-%08X %s %08X %02u:%02u %u %s\n",
 
       gdk_threads_leave();
 
-      addr = begin;
-      while (addr < end) {
-        if (addr + MEMORY_BLOCK_SIZE <= end) len = MEMORY_BLOCK_SIZE;
-        else len = end - addr;
+      addr = (void*) begin;
+      while ((unsigned long)addr < end) {
+        if ((unsigned long) addr + MEMORY_BLOCK_SIZE <= end)
+          len = MEMORY_BLOCK_SIZE;
+        else len = end - (unsigned long) addr;
 
-        int i = 0;
+        unsigned long i = 0;
         for (i = 0; i < len / sizeof(long); i++) {
           x = ptrace(PTRACE_PEEKDATA, cheater->pid, addr + i*sizeof(long), x);
           if (errno != 0) { // skip this range
 #ifdef DEBUG
 perror("peek error!\n");
-printf("peek %08X error, errno = %d\n", addr, errno);
+printf("peek 0x%08X error, errno = %d\n", (unsigned long) addr, errno);
 #endif
             break;
           }
@@ -233,7 +233,7 @@ printf("peek %08X error, errno = %d\n", addr, errno);
           if (errno != 0) { // skip this range
 #ifdef DEBUG
 perror("peek error!\n");
-printf("peek %08X error, errno = %d\n", addr, errno);
+printf("peek 0x%08X error, errno = %d\n", (unsigned long) addr, errno);
 #endif
             break;
           }
@@ -244,7 +244,7 @@ printf("peek %08X error, errno = %d\n", addr, errno);
           break;
         }
 
-        int off = 0;
+        unsigned long off = 0;
 
         switch (cheater->type) {
           case TYPE_U8 :
@@ -255,7 +255,7 @@ printf("peek %08X error, errno = %d\n", addr, errno);
             while (i < off) {
               if (pu8[i] == (guint8) cheater->value) {
                 cheater->result = g_slist_append(cheater->result, 
-                    GUINT_TO_POINTER (addr + sizeof(guint8) * i));
+                    addr + sizeof(guint8) * i);
               }
               i++;
             }
@@ -269,7 +269,7 @@ printf("peek %08X error, errno = %d\n", addr, errno);
             while (i < off) {
               if (pu16[i] == (guint16) cheater->value) {
                 cheater->result = g_slist_append(cheater->result, 
-                    GUINT_TO_POINTER (addr + sizeof(guint16) * i));
+                    addr + sizeof(guint16) * i);
               }
               i++;
             }
@@ -283,7 +283,7 @@ printf("peek %08X error, errno = %d\n", addr, errno);
             while (i < off) {
               if (pu32[i] == (guint32) cheater->value) {
                 cheater->result = g_slist_append(cheater->result, 
-                    GUINT_TO_POINTER (addr + sizeof(guint32) * i));
+                    addr + sizeof(guint32) * i);
               }
               i++;
             }
@@ -297,7 +297,7 @@ printf("peek %08X error, errno = %d\n", addr, errno);
             while (i < off) {
               if (pu64[i] == (guint64) cheater->value) {
                 cheater->result = g_slist_append(cheater->result, 
-                    GUINT_TO_POINTER (addr + sizeof(guint64) * i));
+                    addr + sizeof(guint64) * i);
               }
               i++;
             }
@@ -314,8 +314,8 @@ printf("peek %08X error, errno = %d\n", addr, errno);
           gdouble percent = (gdouble) j / (gdouble) k;
           gtk_progress_bar_set_fraction(
              GTK_PROGRESS_BAR (progressbar), percent);
-          snprintf(buf, sizeof(buf), "0x%08X-0x%08X: 0x%08X/0x%08X %.2f%%",
-             begin, end, j, k, percent*100);
+          snprintf(buf, sizeof(buf), "0x%0*lX-0x%0*lX: %05.2f%%",
+             sizeof(long)*2, begin, sizeof(long)*2, end, percent*100);
           gtk_progress_bar_set_text(GTK_PROGRESS_BAR (progressbar), buf);
 
           gdk_threads_leave();
@@ -334,8 +334,8 @@ printf("peek %08X error, errno = %d\n", addr, errno);
     /* value changed. search again */
     GSList* list = cheater->result;
 
-    guint j = 0;
-    guint k = g_slist_length(cheater->result);
+    unsigned long j = 0;
+    unsigned long k = g_slist_length(cheater->result);
 
     if (!GTK_IS_WINDOW (window)) goto out;
     gdk_threads_enter();
@@ -345,12 +345,12 @@ printf("peek %08X error, errno = %d\n", addr, errno);
     gdk_threads_leave();
 
     while (1) {
-      addr = GPOINTER_TO_UINT (list->data);
+      addr = list->data;
       x = ptrace(PTRACE_PEEKDATA, cheater->pid, addr, x);
       if (errno != 0) {
 #ifdef DEBUG
 perror("2:peek error: ");
-printf("2:peek %08X error, errno = %d\n", (guint)addr, errno);
+printf("2:peek 0x%08X error, errno = %d\n", (unsigned long) addr, errno);
 #endif
         errno = 0;
 //        break;
@@ -385,9 +385,25 @@ printf("2:peek %08X error, errno = %d\n", (guint)addr, errno);
         }
         case TYPE_U64 :
         {
-          guint64* pu64 = (guint64*) pt;
-          if (pu64[0] != (guint64) cheater->value) {
-            list->data = NULL;
+          /* For 32-bit platform search 64-bit length value */
+          if (sizeof(guint64) / sizeof(long) == 2) {
+            long y = ptrace(PTRACE_PEEKDATA, cheater->pid, 
+                addr + sizeof(long), y);
+            if (errno != 0) {
+              errno = 0;
+              break;
+            }
+            guint64 u64 = 0;
+            memcpy(&u64, &x, sizeof(long));
+            memcpy((void*) &u64 + sizeof(long), &y, sizeof(long));
+            if (u64 != (guint64) cheater->value) {
+              list->data = NULL;
+            }
+          } else {
+            guint64* pu64 = (guint64*) pt;
+            if (pu64[0] != (guint64) cheater->value) {
+              list->data = NULL;
+            }
           }
           break;
         }
@@ -405,7 +421,7 @@ printf("2:peek %08X error, errno = %d\n", (guint)addr, errno);
         gdouble percent = (gdouble) ((gdouble) j / (gdouble) k);
         gtk_progress_bar_set_fraction(
             GTK_PROGRESS_BAR (progressbar), percent);
-        snprintf(buf, sizeof(buf), "%u/%u %.2f%%",
+        snprintf(buf, sizeof(buf), "%lu/%lu %05.2f%%",
             j, k, percent*100);
         gtk_progress_bar_set_text(GTK_PROGRESS_BAR (progressbar), buf);
 
@@ -441,8 +457,8 @@ out:
   return NULL;
 }
 
-void update_value(unsigned int pid, void* addr, 
-                  unsigned char* value, unsigned int len)
+void update_value(unsigned long pid, void* addr, 
+                  void* value, unsigned long len)
 {
   if (pid == 0 || addr == NULL || value == NULL || len == 0) return;
 
@@ -454,8 +470,8 @@ void update_value(unsigned int pid, void* addr,
   waitpid(pid, NULL, 0);
   if (errno != 0) goto out;
 
-  int i = 0;
-  unsigned long x = 0;
+  unsigned long i = 0;
+  long x = 0;
   for (i = 0; i < len / sizeof(long); i++) {
     memcpy(&x, value + i*sizeof(long), sizeof(long));
     ptrace(PTRACE_POKEDATA, pid, addr + i*sizeof(long), x);
@@ -463,7 +479,7 @@ void update_value(unsigned int pid, void* addr,
   }
 
   if (len % sizeof(long) != 0) {
-    x = (unsigned long) ptrace(PTRACE_PEEKDATA, pid, addr, x);
+    x = ptrace(PTRACE_PEEKDATA, pid, addr, x);
     if (errno != 0) goto out;
     memcpy(&x, value + i*sizeof(long), len % sizeof(long));
     ptrace(PTRACE_POKEDATA, pid, addr + i*sizeof(long), x);

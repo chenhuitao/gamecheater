@@ -46,8 +46,8 @@ enum
 
 
 typedef struct {
-  unsigned int pid; 
-  guint value;
+  unsigned long pid; 
+  guint64 value;
   unsigned int type;
   /*
      store memory address, updated after every search
@@ -64,17 +64,17 @@ typedef struct {
 extern "C" {
 #endif
 
-gboolean str2uint(const char* str, guint* puint);
+gboolean str2u64(const char* str, guint64* pu64);
 
-gboolean ptrace_test(unsigned int pid);
+gboolean ptrace_test(unsigned long pid);
 
-void get_mem_preview(unsigned int pid, guint addr,
-                     unsigned char* preview, guint len);
+void get_mem_preview(unsigned long pid, void* addr,
+                     void* preview, unsigned long len);
 
 void* search_value(cheater_t* cheater);
 
-void update_value(unsigned int pid, void* addr, 
-                  unsigned char* value, unsigned int len);
+void update_value(unsigned long pid, void* addr, 
+                  void* value, unsigned long len);
 
 #ifdef __cplusplus
 }

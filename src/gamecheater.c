@@ -26,6 +26,10 @@
 #include <config.h>
 #endif
 
+#ifndef HAVE_PTRACE
+#error "You must have \"ptrace\" systemcall!"
+#endif
+
 #include "process.h"
 #include "search.h"
 #include "gamecheater.h"
@@ -46,7 +50,8 @@ void replace_activate(GtkTreeView* treeview, gpointer data)
   GtkWidget* dialog = glade_xml_get_widget(xml, "dialog");
 
   GladeXML* parent_xml = glade_get_widget_tree(GTK_WIDGET (treeview));
-  GtkWindow* parent = GTK_WINDOW (glade_xml_get_widget(parent_xml, "window_main"));
+  GtkWindow* parent = GTK_WINDOW 
+      (glade_xml_get_widget(parent_xml, "window_main"));
   gtk_window_set_transient_for(GTK_WINDOW (dialog), parent);
   gtk_window_set_icon(GTK_WINDOW (dialog), 
                       gtk_window_get_icon(parent));
@@ -57,10 +62,12 @@ void replace_activate(GtkTreeView* treeview, gpointer data)
   gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON (radio), TRUE);
   gtk_window_set_focus(GTK_WINDOW (dialog), radio);
 
+#ifdef DISABLE_TYPE_U64
   radio = glade_xml_get_widget(xml, "radio_u64");
   if (sizeof(long) != sizeof(guint64)) {
     gtk_widget_set_sensitive(radio, FALSE);    
   }
+#endif
 
 run:
   i = gtk_dialog_run (GTK_DIALOG (dialog));
@@ -75,7 +82,7 @@ run:
       GList* list = gtk_tree_selection_get_selected_rows(selection, NULL);
       GtkTreePath* path = list->data;
 
-      unsigned int pid = 0;
+      unsigned long pid = 0;
       gtk_tree_model_get_iter(model, &iter, path);
       gtk_tree_model_get(model, &iter, MYPROC_ID_COLUMN, &pid, -1);
 
@@ -83,21 +90,23 @@ run:
       g_list_free (list);
 
       /* get address */
-      guint addr = 0;
+      unsigned long addr = 0;
+      guint64 addr_u64 = 0;
       const gchar* text;
       GtkWidget* entry_address = glade_xml_get_widget(xml, "entry_address");
       text = gtk_entry_get_text(GTK_ENTRY (entry_address));
-      if (!str2uint(text, &addr)) break;
+      if (!str2u64(text, &addr_u64)) break;
+      addr = addr_u64;
 
       /* get value */
-      guint value = 0;
+      guint64 value = 0;
       GtkWidget* entry_value = glade_xml_get_widget(xml, "entry_value");
       text = gtk_entry_get_text(GTK_ENTRY (entry_value));
-      if (!str2uint(text, &value)) break;
+      if (!str2u64(text, &value)) break;
 
       /* get type */
-      unsigned char* value_addr = (unsigned char*) &value;
-      guint len = sizeof(guint);
+      void* value_addr = (void*) &value;
+      unsigned long len = sizeof(long);
       guint8 u8 = value;
       guint16 u16 = value;
       guint32 u32 = value;
@@ -105,32 +114,32 @@ run:
       do {
         radio = glade_xml_get_widget(xml, "radio_u8");
         if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON (radio))) {
-          value_addr = (unsigned char*) &u8;
+          value_addr = (void*) &u8;
           len = sizeof(guint8);
           break;
         }
         radio = glade_xml_get_widget(xml, "radio_u16");
         if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON (radio))) {
-          value_addr = (unsigned char*) &u16;
+          value_addr = (void*) &u16;
           len = sizeof(guint16);
           break;
         }
         radio = glade_xml_get_widget(xml, "radio_u32");
         if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON (radio))) {
-          value_addr = (unsigned char*) &u32;
+          value_addr = (void*) &u32;
           len = sizeof(guint32);
           break;
         }
         radio = glade_xml_get_widget(xml, "radio_u64");
         if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON (radio))) {
-          value_addr = (unsigned char*) &u64;
+          value_addr = (void*) &u64;
           len = sizeof(guint64);
           break;
         }
       } while (0);
 #ifdef DEBUG
-printf("update:pid[%u], addr[0x%08X], value[0x%08X], len[%u]\n", 
-    pid, addr, update_value, len);
+printf("update:pid[%lu], addr[0x%08X], value[0x%08X], len[%lu]\n", 
+    pid, addr, (unsigned long) update_value, len);
 #endif
       update_value(pid, (void*) addr, value_addr, len);
     }
@@ -154,7 +163,7 @@ void init_proc_treeview(GtkTreeView* treeview)
   gtk_tree_selection_set_mode (select, GTK_SELECTION_SINGLE);
 
   myproc_store = gtk_list_store_new(N_MYPROC_COLUMNS, 
-                                    G_TYPE_INT, G_TYPE_STRING);
+                                    G_TYPE_ULONG, G_TYPE_STRING);
 
   gtk_tree_view_set_model(treeview, GTK_TREE_MODEL(myproc_store)); 
   g_object_unref(myproc_store);
@@ -193,7 +202,7 @@ void refresh_proc_treeview(GtkWidget* widget, gpointer data)
   struct stat mystat;
   GDir* dproc;
   const gchar* filename;
-  guint pid = 0;
+  guint64 pid = 0;
   uid_t myuid = getuid();
 
   myproc_store = GTK_LIST_STORE 
@@ -209,7 +218,7 @@ void refresh_proc_treeview(GtkWidget* widget, gpointer data)
   while ((filename = g_dir_read_name(dproc)) != NULL) {
     if (filename[0] == '.') continue;
     // can not ptrace self
-    if (!str2uint(filename, &pid)) continue;
+    if (!str2u64(filename, &pid)) continue;
     if (pid == getpid()) continue;
     if (strcmp(filename, "self") == 0) continue;
     char temp[256];
@@ -237,7 +246,7 @@ void refresh_proc_treeview(GtkWidget* widget, gpointer data)
             }
           }
           if (strncmp(buf, "Pid:\t", 5) == 0) {
-            if (!str2uint(buf+5, &pid)) {
+            if (!str2u64(buf+5, &pid)) {
               pid = 0;
               break;
             }
@@ -261,8 +270,8 @@ void refresh_proc_treeview(GtkWidget* widget, gpointer data)
           if (buf[i] == '/') break;
         }
         gtk_list_store_append(myproc_store, &treeiter);
-        gtk_list_store_set(myproc_store, &treeiter, MYPROC_ID_COLUMN, pid,
-            MYPROC_COLUMN, buf+i+1, -1);
+        gtk_list_store_set(myproc_store, &treeiter, MYPROC_ID_COLUMN, 
+            (unsigned long) pid, MYPROC_COLUMN, buf+i+1, -1);
       }
     }
   }
@@ -275,7 +284,7 @@ void refresh_proc_treeview(GtkWidget* widget, gpointer data)
 void treeview_row_activated(GtkTreeView *treeview, GtkTreePath *arg1,
                             GtkTreeViewColumn *arg2, gpointer data)
 {
-  unsigned int pid;
+  unsigned long pid;
   GtkTreeIter iter;
 
   GtkTreeModel* model = gtk_tree_view_get_model(treeview);
@@ -305,7 +314,7 @@ void treeview_row_activated(GtkTreeView *treeview, GtkTreePath *arg1,
   gtk_statusbar_pop(statusbar, 0);
   if (!ptrace_test(pid)) {
     gchar err[256];
-    snprintf(err, sizeof(err), "Ptrace ERROR! pid = %u", pid);
+    snprintf(err, sizeof(err), "Ptrace ERROR! pid = %lu", pid);
     gtk_statusbar_push(statusbar, 0, err);
     g_free(tmp);
     return;
@@ -318,7 +327,7 @@ void treeview_row_activated(GtkTreeView *treeview, GtkTreePath *arg1,
 }
 
 gboolean treeview_button_press(GtkTreeView* treeview, 
-                               GdkEventButton* event, gpointer data) 
+                                      GdkEventButton* event, gpointer data) 
 {
   if (!GTK_IS_MENU (data) || event == NULL) return FALSE;
 

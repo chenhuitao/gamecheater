@@ -4,18 +4,17 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: gamecheater 0.1\n"
+"Project-Id-Version: gamecheater 0.3\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2005-08-10 16:18+0800\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"POT-Creation-Date: 2005-08-12 02:21+0800\n"
+"PO-Revision-Date: 2005-08-12 02:21+0800\n"
 "Last-Translator: Alf <h980501427@hotmail.com>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#. g_object_set(G_OBJECT (renderer), "font", "MonoSpace", NULL);
-#: src/editor.c:160 src/search.c:68
+#: src/editor.c:160 src/search.c:67
 msgid "MEMORY ADDRESS"
 msgstr "内存地址"
 
@@ -23,15 +22,15 @@ msgstr "内存地址"
 msgid "MEMORY CONTENT"
 msgstr "内存数据"
 
-#: src/gamecheater.c:163
+#: src/gamecheater.c:172
 msgid "My process ID"
 msgstr "我的进程ID"
 
-#: src/gamecheater.c:173
+#: src/gamecheater.c:182
 msgid "My process name"
 msgstr "我的进程名称"
 
-#: src/gamecheater.c:356
+#: src/gamecheater.c:365
 msgid ""
 "A Game Cheater Program.  Just for fun.\n"
 "It use \"ptrace\" system call to search and edit memory"
@@ -39,8 +38,7 @@ msgstr ""
 "一个游戏作弊器。 娱乐娱乐。\n"
 "使用 \"ptrace\" 系统调用来查找和编辑内存"
 
-#. g_object_set(G_OBJECT (renderer), "font", "MonoSpace", NULL);
-#: src/search.c:80
+#: src/search.c:79
 msgid "MEMORY PREVIEW"
 msgstr "内存快照"
 

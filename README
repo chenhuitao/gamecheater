@@ -7,7 +7,7 @@ under my i386 GNU/Linux. If you have any suggestion or problem under other
 platform, please email to me. Thanks.
 
 Requirements:
-  1. Linux-2.6.6
+  1. Linux-2.6
   2. Glib-2.6 (with gthread).
   3. Gtk+-2.6
   4. Libglade-2.4

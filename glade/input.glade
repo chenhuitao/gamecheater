@@ -96,16 +96,16 @@
 	  </child>
 
 	  <child>
-	    <widget class="GtkSpinButton" id="spinbutton">
+	    <widget class="GtkEntry" id="entry">
 	      <property name="visible">True</property>
 	      <property name="can_focus">True</property>
-	      <property name="climb_rate">1</property>
-	      <property name="digits">0</property>
-	      <property name="numeric">True</property>
-	      <property name="update_policy">GTK_UPDATE_ALWAYS</property>
-	      <property name="snap_to_ticks">False</property>
-	      <property name="wrap">False</property>
-	      <property name="adjustment">1 0 1.84467440737e+19 1 100 100</property>
+	      <property name="editable">True</property>
+	      <property name="visibility">True</property>
+	      <property name="max_length">0</property>
+	      <property name="text" translatable="yes"></property>
+	      <property name="has_frame">True</property>
+	      <property name="invisible_char">*</property>
+	      <property name="activates_default">False</property>
 	    </widget>
 	    <packing>
 	      <property name="padding">8</property>

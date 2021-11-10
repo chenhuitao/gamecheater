@@ -46,3 +46,17 @@
   - Change search_value(). First get a block memory, then compare the content 
     by the type. 
   - v0.2 release.
+
+# 2005-08-11  Alf <h980501427@hotmail.com>
+  - Change unsigned int to unsigned long. Type int under 32-bit and 64-bit 
+    paltform is 32-bit length, long is same bit-length with platform. Modify 
+    all the places which use GUINT_TO_POINTER macro. Under 64-bit platform, 
+    pointer is 64-bit length. For 64-bit compatibility.
+  - Change cheater->value type to guint64;
+  - Change ADDRESS_COLUMN, using GTYPE_ULONG.
+  - Change spin_button to text_entry for accept hexadecimal number.
+  - Rename str2uint() to str2u64(), convert string to MAX supported number.
+  - Enable uint64 type.
+
+# 2005-08-12  Alf <h980501427@hotmail.com>
+  - v0.3 release.

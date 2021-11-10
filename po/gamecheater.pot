@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2005-08-10 16:18+0800\n"
+"POT-Creation-Date: 2005-08-12 02:21+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -16,8 +16,7 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#. g_object_set(G_OBJECT (renderer), "font", "MonoSpace", NULL);
-#: src/editor.c:160 src/search.c:68
+#: src/editor.c:160 src/search.c:67
 msgid "MEMORY ADDRESS"
 msgstr ""
 
@@ -25,22 +24,21 @@ msgstr ""
 msgid "MEMORY CONTENT"
 msgstr ""
 
-#: src/gamecheater.c:163
+#: src/gamecheater.c:172
 msgid "My process ID"
 msgstr ""
 
-#: src/gamecheater.c:173
+#: src/gamecheater.c:182
 msgid "My process name"
 msgstr ""
 
-#: src/gamecheater.c:356
+#: src/gamecheater.c:365
 msgid ""
 "A Game Cheater Program.  Just for fun.\n"
 "It use \"ptrace\" system call to search and edit memory"
 msgstr ""
 
-#. g_object_set(G_OBJECT (renderer), "font", "MonoSpace", NULL);
-#: src/search.c:80
+#: src/search.c:79
 msgid "MEMORY PREVIEW"
 msgstr ""
 
