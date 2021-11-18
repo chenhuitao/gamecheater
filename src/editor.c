@@ -1,7 +1,7 @@
 /***************************************************************************
  *
  *  Gtk+ Game Cheater
- *  Copyright (C) 2005 Alf <h980501427@163.com>
+ *  Copyright (C) 2005 Huitao Chen <h980501427@163.com>
  *
  *  This program is free software; you can redistribute it and/or modify 
  *  it under the terms of the GNU General Public License as published by 

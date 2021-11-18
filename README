@@ -1,4 +1,4 @@
-# Alf <h980501427@163.com>
+# Huitao Chen <h980501427@163.com>
 
   It use "ptrace" system call to edit other process' memory.
 

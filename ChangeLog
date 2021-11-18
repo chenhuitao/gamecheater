@@ -1,18 +1,18 @@
-# 2005-08-02  Alf <h980501427@163.com>
+# 2005-08-02  Huitao Chen <h980501427@163.com>
   - Complete the source code. Test it on some games.
   - v0.1 release. First release.
 
-# 2005-08-05  Alf <h980501427@163.com>
+# 2005-08-05  Huitao Chen <h980501427@163.com>
   - Fix some memory leaks.
 
-# 2005-08-06  Alf <h980501427@163.com>
+# 2005-08-06  Huitao Chen <h980501427@163.com>
   - Change the statusbar of search dialog to progressbar for better UI.
     Search "0" maybe needs a long time, because there are so many "0" in the 
     memory, call appending GSList function takes lots of time. The program 
     looks like have been dead. Which memory is unuseless and should be 
     skipped?
 
-# 2005-08-07  Alf <h980501427@163.com>
+# 2005-08-07  Huitao Chen <h980501427@163.com>
   - Read the /proc/%pid%/exe symbolic link file to get the whole process 
     executable binary filename.
   - Set the search window's title "%pid% - name".
@@ -30,7 +30,7 @@
   - Fix a bug at search_value(). The addr memory offset is double increased 
     when appending the result GSList.
 
-# 2005-08-09  Alf <h980501427@163.com>
+# 2005-08-09  Huitao Chen <h980501427@163.com>
   - Add arguments check in some functions.
   - Change get_mem_preview(). Arguments len is confused, it is text length, 
     not memory length. Now it is the memory length. Disply text convert work 
@@ -41,13 +41,13 @@
     This program now is only tested under my i386 GNU/Linux. If you have any 
     suggestion or problem under other platform, PLZ email to me. Thanks.
 
-# 2005-08-10  Alf <h980501427@163.com>
+# 2005-08-10  Huitao Chen <h980501427@163.com>
   - Change update_value(). Now it can update memory by value length.
   - Change search_value(). First get a block memory, then compare the content 
     by the type. 
   - v0.2 release.
 
-# 2005-08-11  Alf <h980501427@163.com>
+# 2005-08-11  Huitao Chen <h980501427@163.com>
   - Change unsigned int to unsigned long. Type int under 32-bit and 64-bit 
     paltform is 32-bit length, long is same bit-length with platform. Modify 
     all the places which use GUINT_TO_POINTER macro. Under 64-bit platform, 
@@ -58,21 +58,21 @@
   - Rename str2uint() to str2u64(), convert string to MAX supported number.
   - Enable uint64 type.
 
-# 2005-08-12  Alf <h980501427@163.com>
+# 2005-08-12  Huitao Chen <h980501427@163.com>
   - v0.3 release.
 
-# 2006-04-08  Alf <h980501427@163.com>
+# 2006-04-08  Huitao Chen <h980501427@163.com>
   - Back.
   - Rewrite the functions which call ptrace, make them to a library.
   - Remove the thread.
   - Use library function strtol() to get the number.
 
-# 2006-04-09  Alf <h980501427@163.com>
+# 2006-04-09  Huitao Chen <h980501427@163.com>
   - Add the library list which in /proc/<pid>/maps, user can select 
     the search space.
   - New icon from gnome, advanced-directory.png.
 
-# 2006-04-15  Alf <h980501427@163.com>
+# 2006-04-15  Huitao Chen <h980501427@163.com>
   - Rewrite the hex editor, use GtkTextView, add struct editor_t.
   - Move the struct cheater_t define to search.c, remove some unused members.
 
