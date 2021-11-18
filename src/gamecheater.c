@@ -1,7 +1,7 @@
 /***************************************************************************
  *
  *  Gtk+ Game Cheater
- *  Copyright (C) 2005 Alf <h980501427@hotmail.com>
+ *  Copyright (C) 2005 Alf <h980501427@163.com>
  *
  *  This program is free software; you can redistribute it and/or modify 
  *  it under the terms of the GNU General Public License as published by 
@@ -366,7 +366,7 @@ run:
 static void about_dialog(GtkWidget* widget,
                          gpointer data) 
 {
-  gchar* authors[] = {"Alf <h980501427@hotmail.com>",
+  gchar* authors[] = {"Alf <h980501427@163.com>",
                        NULL};
 
   GtkWindow* parent = GTK_WINDOW (data);
@@ -375,7 +375,7 @@ static void about_dialog(GtkWidget* widget,
       "authors", authors,
       "comments", _("A Game Cheater Program.\
 \nIt use \"ptrace\" system call to search and edit memory"),
-      "copyright", "Copyright (c) 2005  h980501427@hotmail.com",
+      "copyright", "Copyright (c) 2005  h980501427@163.com",
       "logo", gtk_window_get_icon(parent),
       "name", PACKAGE,
       "version", VERSION,
