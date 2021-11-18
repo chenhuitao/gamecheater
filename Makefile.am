@@ -1,7 +1,5 @@
 SUBDIRS = libgcheater src \
           pixmaps \
-          glade \
+          ui \
           po
-
-#EXTRA_DIST = 
 

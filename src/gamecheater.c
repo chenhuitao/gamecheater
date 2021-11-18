@@ -149,7 +149,8 @@ static gboolean treeview_proc_button_press(GtkTreeView* treeview,
     gtk_tree_selection_select_path(selection, path);
     gtk_tree_path_free(path);
 
-    gtk_menu_popup(menu, NULL, NULL, NULL, NULL, event->button, event->time);
+//    gtk_menu_popup(menu, NULL, NULL, NULL, NULL, event->button, event->time);
+    gtk_menu_popup_at_pointer(menu, NULL);
 
     return TRUE;
   }
@@ -196,13 +197,13 @@ static void treeview_proc_row_activated(GtkTreeView *treeview,
   g_list_foreach (list, (GFunc) gtk_tree_path_free, NULL);
   g_list_free (list);
 
-  GladeXML* xml = glade_get_widget_tree(GTK_WIDGET (treeview));
+  GtkBuilder* builder = g_object_get_data(G_OBJECT(treeview), "builder");
 /*
   GtkStatusbar* statusbar = GTK_STATUSBAR 
-                            (glade_xml_get_widget(xml, "statusbar"));
+                            (gtk_builder_get_object(builder, "statusbar"));
 */
   GtkWindow* window_main = GTK_WINDOW 
-                            (glade_xml_get_widget(xml, "window_main"));
+                            (gtk_builder_get_object(builder, "window_main"));
 
 /*
   gtk_statusbar_pop(statusbar, 0);
@@ -236,22 +237,22 @@ static void run_replace_dialog(GtkTreeView* treeview,
                                gpointer data)
 {
   gint i = 0;
-  GladeXML* xml = glade_xml_new(GLADE_DIR "/replace.glade", NULL, NULL);
-  if (xml == NULL) return;
+  GtkBuilder* builder = gtk_builder_new();
+  gtk_builder_add_from_file(builder, UI_DIR "/replace.ui", NULL);
 
-  GtkWidget* dialog = glade_xml_get_widget(xml, "dialog");
+  GObject* dialog = gtk_builder_get_object(builder, "dialog");
 
-  GladeXML* parent_xml = glade_get_widget_tree(GTK_WIDGET (treeview));
+  GtkBuilder* builder_main = g_object_get_data(G_OBJECT(treeview), "builder");
   GtkWindow* parent = GTK_WINDOW 
-      (glade_xml_get_widget(parent_xml, "window_main"));
+      (gtk_builder_get_object(builder_main, "window_main"));
   gtk_window_set_transient_for(GTK_WINDOW (dialog), parent);
   gtk_window_set_icon(GTK_WINDOW (dialog), 
                       gtk_window_get_icon(parent));
 
-  GtkWidget* radio = glade_xml_get_widget(xml, "radio_u32");
+  GObject* radio = gtk_builder_get_object(builder, "radio_u32");
   /* default for 32-bit long */
   gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON (radio), TRUE);
-  gtk_window_set_focus(GTK_WINDOW (dialog), radio);
+  gtk_window_set_focus(GTK_WINDOW (dialog), GTK_WIDGET (radio));
 
 run:
   i = gtk_dialog_run (GTK_DIALOG (dialog));
@@ -277,7 +278,7 @@ run:
       unsigned long addr = 0;
       const gchar* text;
 
-      GtkWidget* entry_address = glade_xml_get_widget(xml, "entry_address");
+      GObject* entry_address = gtk_builder_get_object(builder, "entry_address");
       text = gtk_entry_get_text(GTK_ENTRY (entry_address));
 
       errno = 0;
@@ -293,7 +294,7 @@ run:
 
       /* get value */
       guint64 value = 0;
-      GtkWidget* entry_value = glade_xml_get_widget(xml, "entry_value");
+      GObject* entry_value = gtk_builder_get_object(builder, "entry_value");
       text = gtk_entry_get_text(GTK_ENTRY (entry_value));
       errno = 0;
       value = strtoll(text, NULL, 0);
@@ -314,25 +315,25 @@ run:
       guint32 u32 = value;
       guint64 u64 = value;
       do {
-        radio = glade_xml_get_widget(xml, "radio_u8");
+        radio = gtk_builder_get_object(builder, "radio_u8");
         if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON (radio))) {
           value_addr = (void*) &u8;
           len = sizeof(guint8);
           break;
         }
-        radio = glade_xml_get_widget(xml, "radio_u16");
+        radio = gtk_builder_get_object(builder, "radio_u16");
         if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON (radio))) {
           value_addr = (void*) &u16;
           len = sizeof(guint16);
           break;
         }
-        radio = glade_xml_get_widget(xml, "radio_u32");
+        radio = gtk_builder_get_object(builder, "radio_u32");
         if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON (radio))) {
           value_addr = (void*) &u32;
           len = sizeof(guint32);
           break;
         }
-        radio = glade_xml_get_widget(xml, "radio_u64");
+        radio = gtk_builder_get_object(builder, "radio_u64");
         if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON (radio))) {
           value_addr = (void*) &u64;
           len = sizeof(guint64);
@@ -345,7 +346,7 @@ run:
       }
       if (!gc_set_memory(pid, (void*) addr, value_addr, len) != 0) {
         g_warning("set memory addr[0x%0*lX] len[%lu] error!\n",
-            sizeof(unsigned long)*2, addr, len);
+            (int)sizeof(unsigned long)*2, addr, len);
       }
       gc_ptrace_continue(pid);
 
@@ -357,7 +358,7 @@ run:
 
   if (i == GTK_RESPONSE_APPLY) goto run;
 
-  gtk_widget_destroy (dialog);
+  gtk_widget_destroy (GTK_WIDGET (dialog));
 
   return;
 }
@@ -397,7 +398,7 @@ static void gamecheater_quit(GtkWidget* widget,
 int main(int argc, char** argv) 
 {
 
-  GladeXML* xml = NULL;
+  GtkBuilder* builder = NULL;
 
   /* init gtk */
 #ifdef ENABLE_NLS
@@ -406,7 +407,6 @@ int main(int argc, char** argv)
   textdomain (PACKAGE);
 #endif
 
-  gtk_set_locale ();
   gtk_init(&argc, &argv);
 
   GOptionContext *context;
@@ -428,49 +428,50 @@ int main(int argc, char** argv)
   }
 
   /* load the interface */
-  xml = glade_xml_new(GLADE_DIR "/gamecheater.glade", NULL, NULL);
-  if (xml == NULL) return -1;
+  builder = gtk_builder_new();
+  gtk_builder_add_from_file(builder, UI_DIR "/gamecheater.ui", NULL);
 
   /* connect the signals in the interface */
 
-  GtkWidget* window_main = glade_xml_get_widget(xml, "window_main");
+  GObject* window_main = gtk_builder_get_object(builder, "window_main");
   gtk_window_set_icon_from_file(GTK_WINDOW (window_main),
       PIXMAPS_DIR "/gamecheater.png", NULL);
   g_signal_connect(G_OBJECT (window_main), "destroy", 
-                   G_CALLBACK (gamecheater_quit), xml);
+                   G_CALLBACK (gamecheater_quit), builder);
 
-  GtkWidget* treeview_proc = glade_xml_get_widget(xml, "treeview_proc");
+  GObject* treeview_proc = gtk_builder_get_object(builder, "treeview_proc");
+  g_object_set_data(G_OBJECT (treeview_proc), "builder", builder);
   init_treeview_proc(GTK_TREE_VIEW (treeview_proc));
 
 
-  GtkWidget* popmenu = glade_xml_get_widget(xml, "popmenu");
+  GObject* popmenu = gtk_builder_get_object(builder, "popmenu");
   g_signal_connect(G_OBJECT (treeview_proc), "row-activated",
                    G_CALLBACK(treeview_proc_row_activated), NULL);
   g_signal_connect(G_OBJECT (treeview_proc), "button_press_event", 
                    G_CALLBACK (treeview_proc_button_press), popmenu);
 
-  GtkWidget* item = NULL;
-  item = glade_xml_get_widget(xml, "search");
+  GObject* item = NULL;
+  item = gtk_builder_get_object(builder, "search");
   g_signal_connect_swapped(G_OBJECT (item), "activate",
                    G_CALLBACK (treeview_proc_row_activated), treeview_proc);
 
-  item = glade_xml_get_widget(xml, "update_value");
+  item = gtk_builder_get_object(builder, "update_value");
   g_signal_connect_swapped(G_OBJECT (item), "activate",
                    G_CALLBACK (run_replace_dialog), treeview_proc);
 
-  item = glade_xml_get_widget(xml, "refresh_proc");
+  item = gtk_builder_get_object(builder, "refresh_proc");
   g_signal_connect_swapped(G_OBJECT (item), "activate",
                    G_CALLBACK (refresh_treeview_proc), treeview_proc);
 
-  GtkWidget* quit = glade_xml_get_widget(xml, "quit");
+  GObject* quit = gtk_builder_get_object(builder, "quit");
   g_signal_connect(G_OBJECT (quit), "activate",
                    G_CALLBACK (gamecheater_quit), NULL);
 
-  GtkWidget* refresh = glade_xml_get_widget(xml, "refresh");
+  GObject* refresh = gtk_builder_get_object(builder, "refresh");
   g_signal_connect_swapped(G_OBJECT (refresh), "activate",
                    G_CALLBACK (refresh_treeview_proc), treeview_proc);
 
-  GtkWidget* about = glade_xml_get_widget(xml, "about");
+  GObject* about = gtk_builder_get_object(builder, "about");
   g_signal_connect(G_OBJECT (about), "activate",
                    G_CALLBACK (about_dialog), (gpointer) window_main);
 

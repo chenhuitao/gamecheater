@@ -37,7 +37,7 @@ typedef struct {
   value_type type;
   GSList* result;
   /* GUI widget tree */
-  GladeXML* xml;
+  GtkBuilder* builder;
 } cheater_t;
 
 static void addr_cell_func(GtkTreeViewColumn* column, 
@@ -50,7 +50,7 @@ static void addr_cell_func(GtkTreeViewColumn* column,
   gchar* text = NULL;
 
   gtk_tree_model_get(model, iter, RESULT_ADDRESS_COLUMN, &addr, -1);
-  text = g_strdup_printf("0x%0*lX", sizeof(unsigned long)*2, addr);
+  text = g_strdup_printf("0x%0*lX", (int)sizeof(unsigned long)*2, addr);
   g_object_set(renderer, "text", text, NULL);
   g_free(text);
 
@@ -145,8 +145,8 @@ static GtkListStore* get_store_result(GtkListStore* store_result,
     if (p == NULL) break;
 
     if (gc_get_memory(cheater->pid, p, preview, sizeof(preview)) != 0) {
-      g_warning("get memory addr[0x%0*lX] len[%u] error!\n",
-          sizeof(unsigned long)*2, (unsigned long) p, sizeof(preview));
+      g_warning("get memory addr[0x%0*lX] len[%lu] error!\n",
+          (int)sizeof(unsigned long)*2, (unsigned long) p, sizeof(preview));
     }
     unsigned char t[4];
     long j = 0;
@@ -169,11 +169,11 @@ static GtkListStore* get_store_result(GtkListStore* store_result,
 static void* search_memory(cheater_t* cheater)
 {
   if (cheater == NULL) return NULL;
-  if (cheater->xml == NULL) return NULL;
+  if (cheater->builder == NULL) return NULL;
 
-  GladeXML* xml = cheater->xml;
+  GtkBuilder* builder = cheater->builder;
 /*
-  GtkWidget* window = glade_xml_get_widget(xml, "window");
+  GtkWidget* window = gtk_builder_get_object(builder, "window");
 */
 
   /* stop the process. */
@@ -183,13 +183,13 @@ static void* search_memory(cheater_t* cheater)
     return NULL;
   }
 
-  GtkWidget* treeview_lib = glade_xml_get_widget(xml, "treeview_lib");
-  GtkWidget* treeview_result = glade_xml_get_widget(xml, "treeview_result");
-  GtkWidget* progressbar = glade_xml_get_widget(xml, "progressbar");
-  GtkWidget* entry = glade_xml_get_widget(xml, "entry");
+  GObject* treeview_lib = gtk_builder_get_object(builder, "treeview_lib");
+  GObject* treeview_result = gtk_builder_get_object(builder, "treeview_result");
+  GObject* progressbar = gtk_builder_get_object(builder, "progressbar");
+  GObject* entry = gtk_builder_get_object(builder, "entry");
 
-  gtk_widget_set_sensitive(entry, FALSE);
-  gtk_widget_set_sensitive(treeview_lib, FALSE);
+  gtk_widget_set_sensitive(GTK_WIDGET (entry), FALSE);
+  gtk_widget_set_sensitive(GTK_WIDGET (treeview_lib), FALSE);
 
   char buf[MEMORY_BLOCK_SIZE];
   void* addr = NULL;
@@ -253,7 +253,7 @@ static void* search_memory(cheater_t* cheater)
         else len = end - (unsigned long) addr;
         if (gc_get_memory(pid, addr, (void*)buf, len) != 0) {
           g_warning("get memory addr[0x%0*lX] len[%lu] error!\n",
-              sizeof(unsigned long)*2, (unsigned long) addr, len);
+              (int)sizeof(unsigned long)*2, (unsigned long) addr, len);
           goto out;
         }
         switch (cheater->type) {
@@ -355,7 +355,7 @@ static void* search_memory(cheater_t* cheater)
           guint8 tu8 = 0;
           if (gc_get_memory(pid, addr, (void*)&tu8, sizeof(guint8)) != 0) {
             g_warning("get memory addr[0x%0*lX] error!\n", 
-                sizeof(unsigned long)*2, (unsigned long) addr);
+                (int)sizeof(unsigned long)*2, (unsigned long) addr);
             goto out;
           }
           if (u8 != tu8) {
@@ -369,7 +369,7 @@ static void* search_memory(cheater_t* cheater)
           guint16 tu16 = 0;
           if (gc_get_memory(pid, addr, (void*)&tu16, sizeof(guint16)) != 0) {
             g_warning("get memory addr[0x%0*lX] error!\n", 
-                sizeof(unsigned long)*2, (unsigned long) addr);
+                (int)sizeof(unsigned long)*2, (unsigned long) addr);
             goto out;
           }
           if (u16 != tu16) {
@@ -383,7 +383,7 @@ static void* search_memory(cheater_t* cheater)
           guint32 tu32 = 0;
           if (gc_get_memory(pid, addr, (void*)&tu32, sizeof(guint32)) != 0) {
             g_warning("get memory addr[0x%0*lX] error!\n", 
-                sizeof(unsigned long)*2, (unsigned long) addr);
+                (int)sizeof(unsigned long)*2, (unsigned long) addr);
             goto out;
           }
           if (u32 != tu32) {
@@ -397,7 +397,7 @@ static void* search_memory(cheater_t* cheater)
           guint64 tu64 = 0;
           if (gc_get_memory(pid, addr, (void*)&tu64, sizeof(guint64)) != 0) {
             g_warning("get memory addr[0x%0*lX] error!\n", 
-                sizeof(unsigned long)*2, (unsigned long) addr);
+                (int)sizeof(unsigned long)*2, (unsigned long) addr);
             goto out;
           }
           if (u64 != tu64) {
@@ -435,8 +435,8 @@ static void* search_memory(cheater_t* cheater)
   snprintf(buf, sizeof(buf), _("%u matched"), g_slist_length(cheater->result));
   gtk_progress_bar_set_text(GTK_PROGRESS_BAR (progressbar), buf);
 
-  gtk_widget_set_sensitive(treeview_lib, TRUE);
-  gtk_widget_set_sensitive(entry, TRUE);
+  gtk_widget_set_sensitive(GTK_WIDGET (treeview_lib), TRUE);
+  gtk_widget_set_sensitive(GTK_WIDGET (entry), TRUE);
 
 out:
   gc_ptrace_continue(pid);
@@ -558,20 +558,20 @@ static void treeview_result_row_activated(gpointer data,
   if (data == NULL) return;
 
   gint i = 0;
-  GladeXML* xml = glade_xml_new(GLADE_DIR "/input.glade", NULL, NULL);
-  if (xml == NULL) return;
+  GtkBuilder* builder = gtk_builder_new();
+  gtk_builder_add_from_file(builder, UI_DIR "/input.ui", NULL);
 
-  GtkWidget* dialog = glade_xml_get_widget(xml, "dialog");
+  GObject* dialog = gtk_builder_get_object(builder, "dialog");
 
   cheater_t* cheater = (cheater_t*) data;
-  GladeXML* parent_xml = cheater->xml;
-  GtkWindow* parent = GTK_WINDOW (glade_xml_get_widget(parent_xml, "window"));
+  GtkBuilder* builder_main = cheater->builder;
+  GtkWindow* parent = GTK_WINDOW (gtk_builder_get_object(builder_main, "window"));
   gtk_window_set_transient_for(GTK_WINDOW (dialog), parent);
   gtk_window_set_icon(GTK_WINDOW (dialog), 
                       gtk_window_get_icon(parent));
 
   GtkTreeView* treeview = GTK_TREE_VIEW 
-      (glade_xml_get_widget(parent_xml, "treeview_result"));
+      (gtk_builder_get_object(builder_main, "treeview_result"));
 
 run:
   i = gtk_dialog_run (GTK_DIALOG (dialog));
@@ -596,7 +596,7 @@ run:
       const gchar* text = NULL;
       guint64 value = 0;
 
-      GtkWidget* entry = glade_xml_get_widget(xml, "entry");
+      GObject* entry = gtk_builder_get_object(builder, "entry");
       errno = 0;
       text = gtk_entry_get_text(GTK_ENTRY (entry));
       value = strtoull(text, NULL, 0);
@@ -649,7 +649,7 @@ run:
       }
       if (gc_set_memory(cheater->pid, (void*) addr, value_addr, len) != 0) {
         g_warning("set memory addr[0x%0*lX] len[%d] error!\n",
-            sizeof(unsigned long)*2, addr, len);
+            (int)sizeof(unsigned long)*2, addr, len);
       }
       gc_ptrace_continue(cheater->pid);
 
@@ -659,7 +659,7 @@ run:
       break;
   } /* end of switch(i) */
 
-  gtk_widget_destroy(dialog);
+  gtk_widget_destroy(GTK_WIDGET (dialog));
 
   return;
 }
@@ -672,10 +672,10 @@ static void edit_activate(GtkWidget* widget,
 
   cheater_t* cheater = (cheater_t*) data;
 
-  GladeXML* xml = cheater->xml;
-  GtkWindow* parent = GTK_WINDOW (glade_xml_get_widget(xml, "window"));
+  GtkBuilder* builder = cheater->builder;
+  GtkWindow* parent = GTK_WINDOW (gtk_builder_get_object(builder, "window"));
   GtkTreeView* treeview = GTK_TREE_VIEW (
-      glade_xml_get_widget(xml, "treeview_result"));
+      gtk_builder_get_object(builder, "treeview_result"));
 
   GtkTreeIter iter;
   unsigned long addr = 0;
@@ -716,7 +716,8 @@ static gboolean treeview_result_popupmenu(GtkTreeView* treeview,
     gtk_tree_selection_select_path(selection, path);
     gtk_tree_path_free(path);
 
-    gtk_menu_popup(menu, NULL, NULL, NULL, NULL, event->button, event->time);
+//    gtk_menu_popup(menu, NULL, NULL, NULL, NULL, event->button, event->time);
+    gtk_menu_popup_at_pointer(menu, NULL);
     return TRUE;
   }
 
@@ -730,17 +731,17 @@ static void expander_notify(GtkExpander* expander,
   cheater_t* cheater = (cheater_t*) data;
   if (cheater == NULL) return;
 
-  GladeXML* xml = cheater->xml;
-  GtkWidget* label_expander = glade_xml_get_widget(xml, "label_expander");
-  GtkWidget* scrolledwindow_lib = 
-      glade_xml_get_widget(xml, "scrolledwindow_lib");
+  GtkBuilder* builder = cheater->builder;
+  GObject* label_expander = gtk_builder_get_object(builder, "label_expander");
+  GObject* scrolledwindow_lib = 
+      gtk_builder_get_object(builder, "scrolledwindow_lib");
   
   if (gtk_expander_get_expanded (expander)) {
     gtk_label_set_text(GTK_LABEL(label_expander), _("Hide memory range"));
-    gtk_widget_show(scrolledwindow_lib);
+    gtk_widget_show(GTK_WIDGET (scrolledwindow_lib));
   } else {
     gtk_label_set_text(GTK_LABEL(label_expander), _("Show memory range"));
-    gtk_widget_hide(scrolledwindow_lib);
+    gtk_widget_hide(GTK_WIDGET (scrolledwindow_lib));
   }
 
   return;
@@ -753,32 +754,32 @@ static void entry_activate(GtkEntry* entry,
   if (cheater == NULL) return;
 
   /* get type */
-  GladeXML* xml = cheater->xml;
-  GtkWidget* radio;
+  GtkBuilder* builder = cheater->builder;
+  GObject* radio;
   cheater->type = TYPE_AUTO;
 
   do {
-    radio = glade_xml_get_widget(xml, "radiobutton_auto");
+    radio = gtk_builder_get_object(builder, "radiobutton_auto");
     if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON (radio))) {
       cheater->type = TYPE_AUTO;
       break;
     }
-    radio = glade_xml_get_widget(xml, "radiobutton_u8");
+    radio = gtk_builder_get_object(builder, "radiobutton_u8");
     if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON (radio))) {
       cheater->type = TYPE_U8;
       break;
     }
-    radio = glade_xml_get_widget(xml, "radiobutton_u16");
+    radio = gtk_builder_get_object(builder, "radiobutton_u16");
     if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON (radio))) {
      cheater->type = TYPE_U16;
       break;
     }
-    radio = glade_xml_get_widget(xml, "radiobutton_u32");
+    radio = gtk_builder_get_object(builder, "radiobutton_u32");
     if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON (radio))) {
       cheater->type = TYPE_U32;
       break;
     }
-    radio = glade_xml_get_widget(xml, "radiobutton_u64");
+    radio = gtk_builder_get_object(builder, "radiobutton_u64");
     if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON (radio))) {
       cheater->type = TYPE_U64;
       break;
@@ -793,7 +794,7 @@ static void entry_activate(GtkEntry* entry,
   text = gtk_entry_get_text(entry);
   value = strtoull(text, NULL, 0);
   if (errno != 0 ) {
-    GtkWindow* parent = GTK_WINDOW (glade_xml_get_widget(xml, "window"));
+    GtkWindow* parent = GTK_WINDOW (gtk_builder_get_object(builder, "window"));
     GtkWidget* dlg = gtk_message_dialog_new(parent,
         GTK_DIALOG_MODAL, GTK_MESSAGE_ERROR, GTK_BUTTONS_CLOSE,
     _("THE NUMBER IS ILLEGAL!\nNUMBER[%s]"), text);
@@ -866,8 +867,8 @@ void create_search_window(GtkWindow* parent,
   if (!GTK_IS_WINDOW (parent) || pid <= 1 || name == NULL) return;
 
   /* load the interface */
-  GladeXML* xml = glade_xml_new(GLADE_DIR "/search.glade", NULL, NULL);
-  if (xml == NULL) return;
+  GtkBuilder* builder = gtk_builder_new();
+  gtk_builder_add_from_file(builder, UI_DIR "/search.ui", NULL);
 
   /* init cheater */
   cheater_t* cheater = g_malloc(sizeof(cheater_t));
@@ -875,10 +876,10 @@ void create_search_window(GtkWindow* parent,
   cheater->value = 0;
   cheater->type = TYPE_AUTO;
   cheater->result = NULL;
-  cheater->xml = xml;
+  cheater->builder = builder;
 
   /* connect signals */
-  GtkWidget* window = glade_xml_get_widget(xml, "window");
+  GObject* window = gtk_builder_get_object(builder, "window");
   gtk_window_set_transient_for(GTK_WINDOW (window), parent);
   gtk_window_set_icon(GTK_WINDOW (window), gtk_window_get_icon(parent));
 
@@ -888,39 +889,39 @@ void create_search_window(GtkWindow* parent,
   g_signal_connect(G_OBJECT (window), "destroy", 
                    G_CALLBACK (search_quit), (gpointer) cheater);
 
-  GtkWidget* treeview_lib = glade_xml_get_widget(xml, "treeview_lib");
+  GObject* treeview_lib = gtk_builder_get_object(builder, "treeview_lib");
   init_treeview_lib(GTK_TREE_VIEW (treeview_lib), cheater->pid);
 
-  GtkWidget* treeview_result = glade_xml_get_widget(xml, "treeview_result");
+  GObject* treeview_result = gtk_builder_get_object(builder, "treeview_result");
   init_treeview_result(GTK_TREE_VIEW (treeview_result));
   g_signal_connect_swapped(G_OBJECT (treeview_result), "row-activated",
                    G_CALLBACK(treeview_result_row_activated), (gpointer) cheater);
 
-  GtkWidget* popmenu = glade_xml_get_widget(xml, "popmenu");
+  GObject* popmenu = gtk_builder_get_object(builder, "popmenu");
   g_signal_connect(G_OBJECT (treeview_result), "button_press_event", 
                    G_CALLBACK (treeview_result_popupmenu), (gpointer) popmenu);
 
-  GtkWidget* item = NULL;
-  item = glade_xml_get_widget(xml, "new_value");
+  GObject* item = NULL;
+  item = gtk_builder_get_object(builder, "new_value");
   g_signal_connect_swapped(G_OBJECT (item), "activate",
                      G_CALLBACK (treeview_result_row_activated), (gpointer) cheater);
 
-  item = glade_xml_get_widget(xml, "edit_memory");
+  item = gtk_builder_get_object(builder, "edit_memory");
   g_signal_connect(G_OBJECT (item), "activate",
                    G_CALLBACK (edit_activate), (gpointer) cheater);
 
-  GtkWidget* expander = glade_xml_get_widget(xml, "expander");
+  GObject* expander = gtk_builder_get_object(builder, "expander");
   g_signal_connect(G_OBJECT (expander), "notify::expanded", 
                    G_CALLBACK (expander_notify), (gpointer) cheater);
 
-  GtkWidget* entry = glade_xml_get_widget(xml, "entry");
+  GObject* entry = gtk_builder_get_object(builder, "entry");
   g_signal_connect(G_OBJECT (entry), "activate", 
                    G_CALLBACK (entry_activate), (gpointer) cheater);
 
   /* set default focus */
-  gtk_window_set_focus(GTK_WINDOW (window), entry);
+  gtk_window_set_focus(GTK_WINDOW (window), GTK_WIDGET (entry));
 
-  GtkWidget* radio = glade_xml_get_widget(xml, "radiobutton_auto");
+  GObject* radio = gtk_builder_get_object(builder, "radiobutton_auto");
   gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON (radio), TRUE);
 
   return;

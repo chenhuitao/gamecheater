@@ -1,17 +1,18 @@
 # SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the PACKAGE package.
+# Copyright (C) YEAR Free Software Foundation, Inc.
+# This file is distributed under the same license as the gamecheater package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: PACKAGE VERSION\n"
-"Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2006-04-16 16:13+0800\n"
+"Project-Id-Version: gamecheater 0.5\n"
+"Report-Msgid-Bugs-To: h980501427@163.com\n"
+"POT-Creation-Date: 2021-11-18 15:20+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -24,22 +25,22 @@ msgstr ""
 msgid "Process Name"
 msgstr ""
 
-#: src/gamecheater.c:221
+#: src/gamecheater.c:222
 #, c-format
 msgid ""
 "PTRACE  %s  ERROR!\n"
 "PID[%ld]"
 msgstr ""
 
-#: src/gamecheater.c:288 src/gamecheater.c:303 src/search.c:606
-#: src/search.c:799
+#: src/gamecheater.c:289 src/gamecheater.c:304 src/search.c:606
+#: src/search.c:800
 #, c-format
 msgid ""
 "THE NUMBER IS ILLEGAL!\n"
 "NUMBER[%s]"
 msgstr ""
 
-#: src/gamecheater.c:375
+#: src/gamecheater.c:376
 msgid ""
 "A Game Cheater Program.\n"
 "It use \"ptrace\" system call to search and edit memory"
@@ -66,98 +67,98 @@ msgstr ""
 msgid "MEMORY PREVIEW"
 msgstr ""
 
-#: src/search.c:739
+#: src/search.c:740
 msgid "Hide memory range"
 msgstr ""
 
-#: src/search.c:742 glade/search.glade:199
+#: src/search.c:743 ui/search.ui:211
 msgid "Show memory range"
 msgstr ""
 
-#: glade/editor.glade:8
+#: ui/editor.ui:6
 msgid "Edit Memory"
 msgstr ""
 
-#: glade/gamecheater.glade:8
-msgid "Game Cheater"
-msgstr ""
-
-#: glade/gamecheater.glade:40
+#: ui/gamecheater.ui:9
 msgid "_File"
 msgstr ""
 
-#: glade/gamecheater.glade:61
+#: ui/gamecheater.ui:21
 msgid "_View"
 msgstr ""
 
-#: glade/gamecheater.glade:82
+#: ui/gamecheater.ui:33
 msgid "_Help"
 msgstr ""
 
-#: glade/gamecheater.glade:157
+#: ui/gamecheater.ui:65
 msgid "_Search"
 msgstr ""
 
-#: glade/gamecheater.glade:177
+#: ui/gamecheater.ui:72
 msgid "_Update value"
 msgstr ""
 
-#: glade/input.glade:8
+#: ui/gamecheater.ui:95
+msgid "Game Cheater"
+msgstr ""
+
+#: ui/input.ui:6
 msgid "Please input new value"
 msgstr ""
 
-#: glade/input.glade:77
+#: ui/input.ui:67
 msgid "Please input new value : "
 msgstr ""
 
-#: glade/replace.glade:8
+#: ui/replace.ui:6
 msgid "Replace memory"
 msgstr ""
 
-#: glade/replace.glade:192
+#: ui/replace.ui:174
 msgid "ADDRESS"
 msgstr ""
 
-#: glade/replace.glade:220 glade/replace.glade:270
+#: ui/replace.ui:201 ui/replace.ui:249
 msgid "If vlaue is a hexadecimal integer, add prefix \"0x\"."
 msgstr ""
 
-#: glade/replace.glade:242
+#: ui/replace.ui:222
 msgid "NEW VALUE"
 msgstr ""
 
-#: glade/search.glade:40
-msgid "Data Type"
-msgstr ""
-
-#: glade/search.glade:66
-msgid "auto"
-msgstr ""
-
-#: glade/search.glade:85
-msgid "uint8"
-msgstr ""
-
-#: glade/search.glade:105
-msgid "uint16"
-msgstr ""
-
-#: glade/search.glade:125
-msgid "uint32"
-msgstr ""
-
-#: glade/search.glade:145
-msgid "uint64"
-msgstr ""
-
-#: glade/search.glade:229
-msgid "Search"
-msgstr ""
-
-#: glade/search.glade:387
+#: ui/search.ui:10
 msgid "_New value"
 msgstr ""
 
-#: glade/search.glade:413
+#: ui/search.ui:17
 msgid "_Edit memory"
+msgstr ""
+
+#: ui/search.ui:62
+msgid "Data Type"
+msgstr ""
+
+#: ui/search.ui:87
+msgid "auto"
+msgstr ""
+
+#: ui/search.ui:105
+msgid "uint8"
+msgstr ""
+
+#: ui/search.ui:124
+msgid "uint16"
+msgstr ""
+
+#: ui/search.ui:143
+msgid "uint32"
+msgstr ""
+
+#: ui/search.ui:162
+msgid "uint64"
+msgstr ""
+
+#: ui/search.ui:237
+msgid "Search"
 msgstr ""

@@ -3,8 +3,8 @@
 src/editor.c
 src/gamecheater.c
 src/search.c
-glade/editor.glade 
-glade/gamecheater.glade 
-glade/input.glade 
-glade/replace.glade 
-glade/search.glade
+ui/editor.ui 
+ui/gamecheater.ui 
+ui/input.ui 
+ui/replace.ui 
+ui/search.ui

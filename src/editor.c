@@ -32,13 +32,13 @@
 
 #define ADDRESS_TEXT_LEN  ((sizeof(unsigned long))*2 + 2 + 4)
 #define MEMORY_TEXT_LEN (PREVIEW_LENGTH*3)
-#define IS_HEXCHAR(ch) ((((ch) >= GDK_0) && ((ch) <= GDK_9)) || \
-                        (((ch) >= GDK_A) && ((ch) <= GDK_F)) || \
-                        (((ch) >= GDK_a) && ((ch) <= GDK_f)))?1:0
+#define IS_HEXCHAR(ch) ((((ch) >= GDK_KEY_0) && ((ch) <= GDK_KEY_9)) || \
+                        (((ch) >= GDK_KEY_A) && ((ch) <= GDK_KEY_F)) || \
+                        (((ch) >= GDK_KEY_a) && ((ch) <= GDK_KEY_f)))?1:0
 typedef struct {
   pid_t pid;
   void* addr;
-  GladeXML* xml;
+  GtkBuilder* builder;
 } editor_t;
 
 static gboolean textview_key_press(GtkWidget* widget,
@@ -98,8 +98,8 @@ static gboolean textview_key_press(GtkWidget* widget,
   }
   if (gc_set_memory(editor->pid, (void*) addr, &value, 
       sizeof(unsigned char)) != 0) {
-    g_warning("set memory addr[0x%0*lX] len[%d] error!\n",
-        sizeof(unsigned long)*2, addr, sizeof(unsigned char));
+    g_warning("set memory addr[0x%0*lX] len[%lu] error!\n",
+        (int)sizeof(unsigned long)*2, addr, sizeof(unsigned char));
   }
   gc_ptrace_continue(editor->pid);
 
@@ -146,7 +146,7 @@ static void refresh_textview(GtkTextView* textview, editor_t* editor)
   int j = 0;
   for (i = 0; i < PREVIEW_LENGTH * MAX_RESULT_VIEW; i++) {
     if (i % PREVIEW_LENGTH == 0) {
-      sprintf((char*) buf+j, "0x%0*lX    ", sizeof(unsigned long)*2, addr);
+      sprintf((char*) buf+j, "0x%0*lX    ", (int)sizeof(unsigned long)*2, addr);
       j += ADDRESS_TEXT_LEN;
       addr += PREVIEW_LENGTH;
     }
@@ -178,7 +178,7 @@ static void mem_view_refresh(GtkButton* button, gpointer data)
   if (data == NULL) return;
   editor_t* editor = (editor_t*) data;
 
-  GtkWidget* textview = glade_xml_get_widget(editor->xml, "textview");
+  GObject* textview = gtk_builder_get_object(editor->builder, "textview");
   refresh_textview(GTK_TEXT_VIEW (textview), editor);
 
   return;
@@ -193,7 +193,7 @@ static void mem_view_up(GtkButton* button, gpointer data)
   p -= PREVIEW_LENGTH * MAX_RESULT_VIEW;
   editor->addr = (void*) p;
 
-  GtkWidget* textview = glade_xml_get_widget(editor->xml, "textview");
+  GObject* textview = gtk_builder_get_object(editor->builder, "textview");
   refresh_textview(GTK_TEXT_VIEW (textview), editor);
 
   return;
@@ -208,7 +208,7 @@ static void mem_view_down(GtkButton* button, gpointer data)
   p += PREVIEW_LENGTH * MAX_RESULT_VIEW;
   editor->addr = (void*) p;
 
-  GtkWidget* textview = glade_xml_get_widget(editor->xml, "textview");
+  GObject* textview = gtk_builder_get_object(editor->builder, "textview");
   refresh_textview(GTK_TEXT_VIEW (textview), editor);
 
   return;
@@ -228,39 +228,39 @@ void create_editor_window(GtkWindow* parent,
 {
   if (!GTK_IS_WINDOW (parent) || pid <= 1 || addr == NULL) return;
 
-  GladeXML* xml = glade_xml_new(GLADE_DIR "/editor.glade", NULL, NULL);
-  if (xml == NULL) return;
+  GtkBuilder* builder = gtk_builder_new();
+  gtk_builder_add_from_file(builder, UI_DIR "/editor.ui", NULL);
 
   editor_t* editor = g_malloc(sizeof(editor_t));
   editor->pid = pid;
   editor->addr = addr;
-  editor->xml = xml;
+  editor->builder = builder;
 
-  GtkWidget* window = glade_xml_get_widget(xml, "window");
+  GObject* window = gtk_builder_get_object(builder, "window");
   gtk_window_set_transient_for(GTK_WINDOW (window), parent);
   gtk_window_set_icon(GTK_WINDOW (window), gtk_window_get_icon(parent));
   g_signal_connect(G_OBJECT (window), "destroy", 
                    G_CALLBACK (editor_quit), (gpointer) editor);
 
-  GtkWidget* textview = glade_xml_get_widget(xml, "textview");
+  GObject* textview = gtk_builder_get_object(builder, "textview");
   PangoFontDescription* font_desc = 
       pango_font_description_from_string ("MonoSpace");
-  gtk_widget_modify_font(textview, font_desc);
+  gtk_widget_override_font(GTK_WIDGET (textview), font_desc);
   pango_font_description_free(font_desc);
   gtk_text_view_set_editable(GTK_TEXT_VIEW (textview), FALSE);
   refresh_textview(GTK_TEXT_VIEW (textview), editor);
   g_signal_connect(G_OBJECT (textview), "key-press-event", 
                    G_CALLBACK (textview_key_press), editor);
 
-  GtkWidget* button_refresh = glade_xml_get_widget(xml, "button_refresh");
+  GObject* button_refresh = gtk_builder_get_object(builder, "button_refresh");
   g_signal_connect(G_OBJECT (button_refresh), "clicked", 
                    G_CALLBACK (mem_view_refresh), editor);
 
-  GtkWidget* button_up = glade_xml_get_widget(xml, "button_up");
+  GObject* button_up = gtk_builder_get_object(builder, "button_up");
   g_signal_connect(G_OBJECT (button_up), "clicked", 
                    G_CALLBACK (mem_view_up), editor);
 
-  GtkWidget* button_down = glade_xml_get_widget(xml, "button_down");
+  GObject* button_down = gtk_builder_get_object(builder, "button_down");
   g_signal_connect(G_OBJECT (button_down), "clicked", 
                    G_CALLBACK (mem_view_down), editor);
 
