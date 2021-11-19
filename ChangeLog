@@ -76,4 +76,17 @@
   - Rewrite the hex editor, use GtkTextView, add struct editor_t.
   - Move the struct cheater_t define to search.c, remove some unused members.
 
+# 2006-04-15  Huitao Chen <h980501427@163.com>
+  - Rewrite the hex editor, use GtkTextView, add struct editor_t.
+  - Move the struct cheater_t define to search.c, remove some unused members.
 
+# 2021-11-18  Huitao Chen <h980501427@163.com>
+  - Use morden GNU gettext and autotools of Ubuntu-20.04.
+  - Use GTKBuilder, convert the glade to ui.
+  - Migrate to GTK-3+.
+
+# 2021-11-19  Huitao Chen <h980501427@163.com>
+  - Check ptrace errno at first try.
+  - Add setcap cap_sys_ptrace+ep when installation.
+  - Remove outdated widget prop.
+  - Use GtkCssProvider. 
