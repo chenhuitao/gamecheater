@@ -24,7 +24,6 @@
         <child>
           <object class="GtkHButtonBox" id="hbuttonbox1">
             <property name="visible">True</property>
-            <property name="layout_style">GTK_BUTTONBOX_DEFAULT_STYLE</property>
             <property name="spacing">0</property>
             <child>
               <object class="GtkButton" id="button_refresh">
