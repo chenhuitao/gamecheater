@@ -243,10 +243,12 @@ void create_editor_window(GtkWindow* parent,
                    G_CALLBACK (editor_quit), (gpointer) editor);
 
   GObject* textview = gtk_builder_get_object(builder, "textview");
-  PangoFontDescription* font_desc = 
-      pango_font_description_from_string ("MonoSpace");
-  gtk_widget_override_font(GTK_WIDGET (textview), font_desc);
-  pango_font_description_free(font_desc);
+
+  GtkCssProvider *provider = gtk_css_provider_new();
+  gtk_css_provider_load_from_data(provider, "textview { font-family: monospace; }", -1, NULL);
+  GtkStyleContext *context = gtk_widget_get_style_context(GTK_WIDGET (textview));
+  gtk_style_context_add_provider(context, GTK_STYLE_PROVIDER(provider), GTK_STYLE_PROVIDER_PRIORITY_USER);
+
   gtk_text_view_set_editable(GTK_TEXT_VIEW (textview), FALSE);
   refresh_textview(GTK_TEXT_VIEW (textview), editor);
   g_signal_connect(G_OBJECT (textview), "key-press-event", 
