@@ -27,6 +27,10 @@ int gc_ptrace_test(pid_t pid)
 
   errno = 0;
   ptrace(PTRACE_ATTACH, pid, 0, 0);
+  if (errno != 0) {
+    errno = 0;
+    return -1;
+  }
 
   waitpid(pid, NULL, 0); // wait child process stop
 
