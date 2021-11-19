@@ -3,3 +3,5 @@ SUBDIRS = libgcheater src \
           ui \
           po
 
+install-exec-local:
+	setcap cap_sys_ptrace+ep $(prefix)/bin/gamecheater
