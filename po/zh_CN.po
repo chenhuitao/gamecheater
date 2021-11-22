@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: gamecheater 0.4\n"
 "Report-Msgid-Bugs-To: h980501427@163.com\n"
-"POT-Creation-Date: 2021-11-18 15:20+0800\n"
+"POT-Creation-Date: 2021-11-22 11:37+0800\n"
 "Last-Translator: Huitao Chen <h980501427@163.com>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: zh_CN\n"
@@ -112,7 +112,7 @@ msgstr "游戏作弊器"
 msgid "Please input new value"
 msgstr "请输入新的数值"
 
-#: ui/input.ui:67
+#: ui/input.ui:66
 msgid "Please input new value : "
 msgstr "请输入新的数值 ： "
 
@@ -120,15 +120,15 @@ msgstr "请输入新的数值 ： "
 msgid "Replace memory"
 msgstr "覆盖内存"
 
-#: ui/replace.ui:174
+#: ui/replace.ui:173
 msgid "ADDRESS"
 msgstr "地址"
 
-#: ui/replace.ui:201 ui/replace.ui:249
+#: ui/replace.ui:200 ui/replace.ui:248
 msgid "If vlaue is a hexadecimal integer, add prefix \"0x\"."
 msgstr "如果是十六进制数值的话，请加上前缀\"0x\"。"
 
-#: ui/replace.ui:222
+#: ui/replace.ui:221
 msgid "NEW VALUE"
 msgstr "新数值"
 
