@@ -1,3 +1,9 @@
+2022-05-25  gettextize  <bug-gnu-gettext@gnu.org>
+
+	* Makefile.am (ACLOCAL_AMFLAGS): New variable.
+	(EXTRA_DIST): New variable.
+	* configure.ac (AM_GNU_GETTEXT_VERSION): Bump to 0.21.
+
 # 2005-08-02  Huitao Chen <h980501427@163.com>
   - Complete the source code. Test it on some games.
   - v0.1 release. First release.
