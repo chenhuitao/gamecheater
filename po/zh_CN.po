@@ -1,28 +1,27 @@
-# SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the PACKAGE package.
-# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+# Chinese translations for gamecheater package.
+# Copyright (C) 2022 Free Software Foundation, Inc.
+# This file is distributed under the same license as the gamecheater package.
+# chenhuitao <h980501427@163.com>, 2022.
 #
-#, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: gamecheater 0.4\n"
+"Project-Id-Version: gamecheater 0.6\n"
 "Report-Msgid-Bugs-To: h980501427@163.com\n"
-"POT-Creation-Date: 2021-11-22 11:37+0800\n"
+"POT-Creation-Date: 2022-05-25 15:31+0800\n"
+"PO-Revision-Date: 2022-05-25 15:46+0800\n"
 "Last-Translator: Huitao Chen <h980501427@163.com>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: zh_CN\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Type: text/plain; charset=ASCII\n"
 "Content-Transfer-Encoding: 8bit\n"
 
 #: src/gamecheater.c:108
 msgid "Process ID"
-msgstr "进程ID"
+msgstr ""
 
 #: src/gamecheater.c:116
 msgid "Process Name"
-msgstr "进程名称"
+msgstr ""
 
 #: src/gamecheater.c:222
 #, c-format
@@ -30,8 +29,6 @@ msgid ""
 "PTRACE  %s  ERROR!\n"
 "PID[%ld]"
 msgstr ""
-"PTRACE  %s  错误!\n"
-"进程ID[%ld]"
 
 #: src/gamecheater.c:289 src/gamecheater.c:304 src/search.c:606
 #: src/search.c:800
@@ -40,109 +37,105 @@ msgid ""
 "THE NUMBER IS ILLEGAL!\n"
 "NUMBER[%s]"
 msgstr ""
-"非法的数字！\n"
-"数字[%s]"
 
 #: src/gamecheater.c:376
 msgid ""
 "A Game Cheater Program.\n"
 "It use \"ptrace\" system call to search and edit memory"
 msgstr ""
-"一个游戏作弊器。\n"
-"使用 \"ptrace\" 系统调用来查找和编辑内存"
 
 #: src/search.c:435
 #, c-format
 msgid "%u matched"
-msgstr "命中 %u 个"
+msgstr ""
 
 #: src/search.c:494
 msgid "SEARCH"
-msgstr "检索"
+msgstr ""
 
 #: src/search.c:509
 msgid "LIBRARY NAME"
-msgstr "库名称"
+msgstr ""
 
 #: src/search.c:535
 msgid "MEMORY ADDRESS"
-msgstr "内存地址"
+msgstr ""
 
 #: src/search.c:545
 msgid "MEMORY PREVIEW"
-msgstr "内存快照"
+msgstr ""
 
 #: src/search.c:740
 msgid "Hide memory range"
-msgstr "隐藏内存范围"
+msgstr ""
 
 #: src/search.c:743 ui/search.ui:211
 msgid "Show memory range"
-msgstr "显示内存范围"
+msgstr ""
 
 #: ui/editor.ui:6
 msgid "Edit Memory"
-msgstr "编辑内存"
+msgstr ""
 
 #: ui/gamecheater.ui:9
 msgid "_File"
-msgstr "文件(_F)"
+msgstr ""
 
 #: ui/gamecheater.ui:21
 msgid "_View"
-msgstr "查看(_V)"
+msgstr ""
 
 #: ui/gamecheater.ui:33
 msgid "_Help"
-msgstr "帮助(_H)"
+msgstr ""
 
 #: ui/gamecheater.ui:65
 msgid "_Search"
-msgstr "查找(_S)"
+msgstr ""
 
 #: ui/gamecheater.ui:72
 msgid "_Update value"
-msgstr "更新数据(_U)"
+msgstr ""
 
 #: ui/gamecheater.ui:95
 msgid "Game Cheater"
-msgstr "游戏作弊器"
+msgstr ""
 
 #: ui/input.ui:6
 msgid "Please input new value"
-msgstr "请输入新的数值"
+msgstr ""
 
 #: ui/input.ui:66
 msgid "Please input new value : "
-msgstr "请输入新的数值 ： "
+msgstr ""
 
 #: ui/replace.ui:6
 msgid "Replace memory"
-msgstr "覆盖内存"
+msgstr ""
 
 #: ui/replace.ui:173
 msgid "ADDRESS"
-msgstr "地址"
+msgstr ""
 
 #: ui/replace.ui:200 ui/replace.ui:248
 msgid "If vlaue is a hexadecimal integer, add prefix \"0x\"."
-msgstr "如果是十六进制数值的话，请加上前缀\"0x\"。"
+msgstr ""
 
 #: ui/replace.ui:221
 msgid "NEW VALUE"
-msgstr "新数值"
+msgstr ""
 
 #: ui/search.ui:10
 msgid "_New value"
-msgstr "新数值(_N)"
+msgstr ""
 
 #: ui/search.ui:17
 msgid "_Edit memory"
-msgstr "编辑内存(_E)"
+msgstr ""
 
 #: ui/search.ui:62
 msgid "Data Type"
-msgstr "查找类型"
+msgstr ""
 
 #: ui/search.ui:87
 msgid "auto"
@@ -166,4 +159,4 @@ msgstr ""
 
 #: ui/search.ui:237
 msgid "Search"
-msgstr "查找"
+msgstr ""
