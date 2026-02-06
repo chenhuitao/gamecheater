@@ -1,6 +1,8 @@
 *.m4 linguist-detectable=false
 Makefile.* linguist-detectable=false
+*.am linguist-detectable=false
 *.in linguist-detectable=false
+*.sh linguist-detectable=false
 config.guess linguist-detectable=false
 compile linguist-detectable=false
 configure linguist-detectable=false
